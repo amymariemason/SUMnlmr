@@ -1,0 +1,34 @@
+Package: SUMnlmr
+Title: Non-Linear Mendenlian Randomization On Partially Summarized Data
+Version: 0.0.0.9000
+Authors@R: 
+    c( person(given = "Amy",
+           family = "Mason",
+           role = c("aut", "cre"),
+           email = "am2609@medschl.cam.ac.uk",
+           comment = c(ORCID = "0000-0002-8019-0777") ),
+        person(given = "Stephen",
+           family = "Burgess",
+           role = "aut",
+           email= "sb432@cam.ac.uk"),
+        person(given = "James",
+            family = "Staley",
+           role = "aut",
+           email= "jrstaley95@gmail.com"),
+        person(given = "Matt",
+            family = "Arnold",
+           role = "aut",
+           email= "")  )
+Description: Runs non-linear MR calculations on pre-summarized data.
+License: GPL (>= 2)
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+Depends: R (>= 3.1.0)
+Imports: 
+  stats,
+  methods,
+  ggplot2,
+  metafor,
+  matrixStats,
