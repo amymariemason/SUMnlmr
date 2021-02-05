@@ -2,7 +2,8 @@
 % Please edit documentation in R/nlme_summ_aes_rest.R
 \name{frac_poly_summ_mr}
 \alias{frac_poly_summ_mr}
-\title{Instrumental variable analysis using fractional polynomials based on summary data}
+\title{Instrumental variable analysis using fractional polynomials based on summary
+data}
 \usage{
 frac_poly_summ_mr(
   by,
@@ -43,21 +44,21 @@ frac_poly_summ_mr(
 summary of the exposure level in the stratum is desired).}
 
 \item{method}{meta-regression method parsed to the rma package. The default
-is fixed-effects ("FE").}
+is fixed-effects ('FE').}
 
 \item{d}{fractional polynomial degree. The default is degree 1. The other
-options are: 1, 2, or "both".}
+options are: 1, 2, or 'both'.}
 
 \item{powers}{fractional polynomial powers to test.}
 
 \item{pd}{p-value cut-off for choosing the best-fitting fractional polynomial
 of degree 2 over the best-fitting fractional polynomial degree 1. This
-option is only used if d="both". The default is 0.05.}
+option is only used if d='both'. The default is 0.05.}
 
 \item{ci}{the type of 95\\\% confidence interval. There are three options:
-(i) using the model standard errors ("model_se"), (ii) using bootstrap
-standard errors ("bootstrap_se"), (iii) using bootstrap percentile
-confidence intervals ("bootstrap_per"). The default is the model standard
+(i) using the model standard errors ('model_se'), (ii) using bootstrap
+standard errors ('bootstrap_se'), (iii) using bootstrap percentile
+confidence intervals ('bootstrap_per'). The default is the model standard
 errors.}
 
 \item{nboot}{the number of bootstrap replications (if required). The default
@@ -66,15 +67,15 @@ is 100 replications.}
 \item{fig}{a logical statement as to whether the user wants the results
 displayed in a figure. The default is false.}
 
-\item{family}{a character string named either \code{"gaussian"} (for
+\item{family}{a character string named either \code{'gaussian'} (for
 continuous data) or binomial (for binary data) family function. This only
 affects the plotting function - whether the y-axis is log-transformed of not.}
 
 \item{offset}{offset on the x-axis (default is zero).}
 
-\item{pref_x}{the prefix/label for the x-axis. The default is "x".}
+\item{pref_x}{the prefix/label for the x-axis. The default is 'x'.}
 
-\item{pref_y}{the prefix/label for the y-axis. The default is "y".}
+\item{pref_y}{the prefix/label for the y-axis. The default is 'y'.}
 
 \item{ref}{the reference point for the figure. This is the value of the
 function that represents the expected difference in the outcome compared
@@ -82,8 +83,8 @@ with this reference value when the exposure is set to different values.
 If \code{ref = NA} (the default option), then it is set to the mean of x.}
 
 \item{ci_type}{the type of confidence interval to be displayed on the graph.
-The default is "overall" where confidence intervals are presented as bands
-across the range of x. The alternative option is "quantile" where the
+The default is 'overall' where confidence intervals are presented as bands
+across the range of x. The alternative option is 'quantile' where the
 confidence intervals are presented as error bars at the mean in each
 quantile of x.}
 
@@ -96,9 +97,6 @@ quantile of x.}
 \item{xlim_lower}{lower limit for the x-axis of the figure.}
 
 \item{xlim_upper}{upper limit for the x-axis of the figure.}
-
-\item{ci_quantile}{the number of quantiles at which confidence intervals are
-to be displayed. The default is deciles (i.e. 10).}
 }
 \value{
 model the model specifications. The first column is the number of
@@ -144,7 +142,8 @@ using meta-regression.
 
 Please note that if you provide synthetic data that are too regular (eg the
 by associations are all zero or the xmean values are exactly 1, 2, 3, ...),
-the function may error as several fractional polynomials provide the same fit.
+the function may error as several fractional polynomials provide the same
+fit.
 }
 \author{
 Stephen Burgess \href{mailto:sb452@medschl.cam.ac.uk}{sb452@medschl.cam.ac.uk}, leading heavily on

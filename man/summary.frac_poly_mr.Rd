@@ -7,12 +7,12 @@
 \method{summary}{frac_poly_mr}(object, ...)
 }
 \arguments{
-\item{object}{an object of class "frac_poly_mr".}
+\item{object}{an object of class 'frac_poly_mr'.}
 
 \item{...}{additional arguments affecting the summary produced.}
 }
 \description{
-summary method for class "frac_poly_mr".
+summary method for class 'frac_poly_mr'.
 }
 \author{
 James R Staley \href{mailto:js16174@bristol.ac.uk}{js16174@bristol.ac.uk}
