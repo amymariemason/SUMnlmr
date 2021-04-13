@@ -33,3 +33,6 @@ Imports:
   metafor,
   matrixStats,
   utils,
+  nlmr,
+Suggests: 
+    testthat
