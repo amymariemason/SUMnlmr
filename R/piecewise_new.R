@@ -310,8 +310,6 @@ piecewise_summ_figure <- function(xcoef, coef,
               coef[ref_pos - 1] * m[ref_pos - 1] +
               y_mm[ref_pos - 1]
 
-
-
   # set ref point to zero
   y_mm_ref <- y_mm - y_ref
 

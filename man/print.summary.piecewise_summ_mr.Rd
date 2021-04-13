@@ -15,5 +15,5 @@
 print summary method for class "piecewise_mr".
 }
 \author{
-James R Staley \href{mailto:js16174@bristol.ac.uk}{js16174@bristol.ac.uk}
+Amy Mason \href{mailto:am2609@medschl.cam.ac.uk}{am2609@medschl.cam.ac.uk}
 }

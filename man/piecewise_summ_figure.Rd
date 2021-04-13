@@ -38,11 +38,15 @@ used in the model. This is a character string naming
 either the gaussian (i.e. "gaussian" for continuous data) or binomial
 (i.e. "binomial" for binary data) family function.}
 
-\item{ref}{the reference point for the figure. This is the value of the function that represents the expected difference in the outcome compared with this reference value when the exposure is set to different values. The default is the mean of x.}
+\item{ref}{the reference point for the figure. This is the value of the
+that represents the expected difference in the outcome compared with this
+reference value when the exposure is set to different values. The default
+is the mean of x.}
 
 \item{pref_x}{the prefix/label for the x-axis. The default is "x".}
 
-\item{pref_x_ref}{the prefix for the reference value displayed on the y-axis. The default is "x".}
+\item{pref_x_ref}{the prefix for the reference value displayed on the y-axis.
+The default is "x".}
 
 \item{pref_y}{the prefix/label for the y-axis. The default is "y".}
 
@@ -57,5 +61,6 @@ the plot of the piecewise linear function.
 piecewise_figure plots the piecewise linear function.
 }
 \author{
-Amy Mason, leaning on work by James Statley and Matt Arnold
+Amy Mason \href{mailto:am2609@medschl.cam.ac.uk}{am2609@medschl.cam.ac.uk},
+leaning on work by James Statley and Matt Arnold
 }

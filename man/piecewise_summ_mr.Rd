@@ -36,11 +36,11 @@ piecewise_summ_mr(
 
 \item{bxse}{vector of standard errors of gene-exposure associations.}
 
-\item{x0mean}{average value of the iv-free exposure in each stratum (or whatever
-summary of the exposure level in the stratum is desired).}
+\item{x0mean}{average value of the iv-free exposure in each stratum (or
+whatever summary of the exposure level in the stratum is desired).}
 
-\item{xmean}{average value of the iv-free exposure in each stratum (or whatever
-summary of the exposure level in the stratum is desired).}
+\item{xmean}{average value of the iv-free exposure in each stratum (or
+whatever summary of the exposure level in the stratum is desired).}
 
 \item{xmin}{min value of the original exposure in each stratum (see note)}
 
