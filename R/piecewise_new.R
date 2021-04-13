@@ -85,39 +85,41 @@ piecewise_summ_mr <- function(by,
                               breaks = NULL,
                               ci_fig = "point") {
   ##### Error messages #####
-  if(!(is.vector(by) & is.vector(bx) & is.vector(byse) & is.vector(bxse))) {
-    stop("either the outcome, exposure or their standard errors is not a
-    vector")
-  }
-  if(!(is.numeric(by) | is.integer(by))) stop("by is not numeric")
-  if(!(is.numeric(bx) | is.integer(bx))) stop("bx is not numeric")
-  if(!(is.numeric(byse) | is.integer(byse))) stop("byse is not numeric")
-  if(!(is.numeric(bxse) | is.integer(bxse))) stop("bxse is not numeric")
-  if(!(is.numeric(x0mean) | is.integer(x0mean))) stop("x0mean is not numeric")
-  if(!(is.numeric(xmean) | is.integer(xmean))) stop("xmean is not numeric")
-  if(!(is.numeric(xmin) | is.integer(xmin))) stop("xmin is not numeric")
-  if(!(is.numeric(xmax) | is.integer(xmax))) stop("xmax is not numeric")
-  if(length(by) <= 1) stop("by single values - cannot
-  calculate multiple quantiles")
-  if(!(length(by) == length(bx))) {
-  stop("the number of observations for the outcome, exposure are not the same")
-  }
-  if(any(is.na(by)) | any(is.na(bx)) | any(is.na(byse))
-    | any(is.na(bxse)) | any(is.na(x0mean)) | any(is.na(xmean))
-    | any(is.na(xmin)) | any(is.na(xmax))) {
-    stop("there are missing values")
-  }
-  if(!(family == "gaussian" | family == "binomial")) {
-    stop('family has to be equal to either "gaussian" or "binomial"')
-  }
 
+  stopifnot(is.vector(by),
+            is.vector(bx),
+            is.vector(byse),
+            is.vector(bxse),
+            "by is not numeric" = (is.numeric(by) | is.integer(by)),
+            "bx is not numeric" = (is.numeric(bx) | is.integer(bx)),
+            "byse is not numeric" = (is.numeric(byse) | is.integer(byse)),
+            "bxse is not numeric" = (is.numeric(bxse) | is.integer(bxse)),
+            "x0mean is not numeric" = (is.numeric(x0mean) | is.integer(x0mean)),
+            "xmean is not numeric" = (is.numeric(xmean) | is.integer(xmean)),
+            "xmin is not numeric" = (is.numeric(xmin) | is.integer(xmin)),
+            "xmax is not numeric" = (is.numeric(xmax) | is.integer(xmax)),
+            "by is single value - cannot calculate multiple quantiles" =
+              length(by) > 1,
+            "difference number of observations for the outcome & exposure" =
+              length(by) == length(bx),
+            "missing by values" = !anyNA(by),
+            "missing bx values" = !anyNA(bx),
+            "missing byse values" = !anyNA(byse),
+            "missing bxse values" = !anyNA(bxse),
+            "missing x0mean values" = !anyNA(x0mean),
+            "missing xmean values" = !anyNA(xmean),
+            "missing xmin values" = !anyNA(xmin),
+            "missing xmax values" = !anyNA(xmax),
+            "family has to be either gaussian or binomial" =
+              family %in% c("gaussian", "binomial")
+  )
 
   ##### define variables #######
   frac_coef <- by
   frac_se <- byse
   xcoef_sub <- bx
   xcoef_sub_se <- bxse
-  xcoef <- sum(bx * (bxse^(-2))) / sum(bxse^(-2))
+  xcoef <- sum(bx * (bxse ^ (-2))) / sum(bxse ^ (-2))
   q <- length(by)
   coef <- frac_coef / xcoef
   coef_se <- frac_se / xcoef
@@ -290,7 +292,7 @@ piecewise_summ_figure <- function(xcoef, coef,
   y_uci <- NULL
 
   # find which section ref point is in
-  for(i in 1:(l - 1)) {
+  for(i in 1:q) {
     if(m[i] <= ref & m[(i + 1)] >= ref) {
       ref_pos <- i + 1
       }
@@ -300,17 +302,15 @@ piecewise_summ_figure <- function(xcoef, coef,
   ### beta estimates in each quartile
 
   y_mm <- NULL
-  for(k in 1:l) {
-    if(k == 1) {
-      y_mm[k] <- 0
-      }
-    if(k >= 2) {
+  y_mm[1]<-0
+  for(k in 2:l) {
       y_mm[k] <- (coef[k - 1] * m[k] - coef[k - 1] * m[k - 1]) + y_mm[k - 1]
-      }
-    if(k == ref_pos) {
-      y_ref <- (coef[k - 1] * ref - coef[k - 1] * m[k - 1]) + y_mm[k - 1]
-      }
   }
+  y_ref <- coef[ref_pos - 1] * ref -
+              coef[ref_pos - 1] * m[ref_pos - 1] +
+              y_mm[ref_pos - 1]
+
+
 
   # set ref point to zero
   y_mm_ref <- y_mm - y_ref
