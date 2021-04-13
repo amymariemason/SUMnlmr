@@ -7,6 +7,8 @@
 \method{summary}{piecewise_summ_mr}(object, ...)
 }
 \arguments{
+\item{...}{Arguments to be passed to or from other methods,}
+
 \item{x}{an object of class "piecewise_mr".}
 }
 \description{

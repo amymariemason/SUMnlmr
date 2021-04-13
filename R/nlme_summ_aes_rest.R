@@ -111,8 +111,7 @@ frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = 1,
         stop("the confidence intervals must be one of \"model_se\",
          \"bootstrap_se\" and \"bootstrap_per\"")
     }
-    ### declare global variables for graph later
-
+    #### Start ###
     frac_coef <- by
     frac_se <- byse
     xcoef_sub <- bx
@@ -427,7 +426,8 @@ frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = 1,
                 if (p_ML == -1) {
                   plot_data$yest <- beta * log(plot_data$x) - (beta * log(ref))
                   if (ci != "bootstrap_per") {
-                    plot_data$yse <- sqrt((log(plot_data$x) - log(ref))^2 * cov)
+                    plot_data$yse <- sqrt((log(plot_data$x) - log(ref))^2 *
+                                            as.vector(cov))
                     plot_data$lci <- plot_data$yest - 1.96 * plot_data$yse
                     plot_data$uci <- plot_data$yest + 1.96 * plot_data$yse
                   } else {
@@ -442,7 +442,7 @@ frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = 1,
                     beta * ref^(p_ML + 1)
                   if (ci != "bootstrap_per") {
                     plot_data$yse <- sqrt((plot_data$x^(p_ML + 1) -
-                                             ref^(p_ML + 1))^2 * cov)
+                                             ref^(p_ML + 1))^2 *  as.vector(cov))
                     plot_data$lci <- plot_data$yest - 1.96 * plot_data$yse
                     plot_data$uci <- plot_data$yest + 1.96 * plot_data$yse
                   } else {
@@ -652,7 +652,8 @@ frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = 1,
                   plot_data_1$yest <- beta * log(plot_data_1$x) -
                     (beta * log(ref))
                   if (ci != "bootstrap_per") {
-                    plot_data$yse <- sqrt((log(plot_data$x) - log(ref))^2 * cov)
+                    plot_data$yse <- sqrt((log(plot_data$x) - log(ref))^2 *
+                                            as.vector(cov))
                     plot_data$lci <- plot_data$yest - 1.96 * plot_data$yse
                     plot_data$uci <- plot_data$yest + 1.96 * plot_data$yse
                   } else {
@@ -670,7 +671,7 @@ frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = 1,
                     beta * ref^(p_ML + 1)
                   if (ci != "bootstrap_per") {
                     plot_data$yse <- sqrt((plot_data$x^(p_ML + 1) -
-                                             ref^(p_ML + 1))^2 * cov)
+                                             ref^(p_ML + 1))^2 *  as.vector(cov))
                     plot_data$lci <- plot_data$yest - 1.96 * plot_data$yse
                     plot_data$uci <- plot_data$yest + 1.96 * plot_data$yse
                   } else {

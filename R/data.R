@@ -1,5 +1,3 @@
-#' Prices of 50,000 round cut diamonds.
-#'
 #' Hunt dataset containing the allele score-associations with bmi and all cause
 #' mortality, by 100 quantiles of residual BMI. As used in the paper
 #' "Body mass index and all cause mortality in HUNT and UK Biobank studies:

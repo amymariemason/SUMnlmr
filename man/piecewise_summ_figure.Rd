@@ -33,6 +33,11 @@ piecewise_summ_figure(
 
 \item{xbreaks}{breakpoints in x (for plotting line estimates)}
 
+\item{family}{a description of the error distribution and link function to be
+used in the model. This is a character string naming
+either the gaussian (i.e. "gaussian" for continuous data) or binomial
+(i.e. "binomial" for binary data) family function.}
+
 \item{ref}{the reference point for the figure. This is the value of the function that represents the expected difference in the outcome compared with this reference value when the exposure is set to different values. The default is the mean of x.}
 
 \item{pref_x}{the prefix/label for the x-axis. The default is "x".}
@@ -42,6 +47,8 @@ piecewise_summ_figure(
 \item{pref_y}{the prefix/label for the y-axis. The default is "y".}
 
 \item{breaks}{breaks on the y-axis of the figure.}
+
+\item{ci_fig}{point confidence intervals, or as ribbon ("point" or "ribbon")}
 }
 \value{
 the plot of the piecewise linear function.

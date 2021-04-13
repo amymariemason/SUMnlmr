@@ -14,8 +14,8 @@ piecewise_summ_mr(
   xmean,
   xmin,
   xmax,
+  xbreaks = NULL,
   family = "gaussian",
-  xquantiles = NULL,
   ci = "model_se",
   nboot = 1000,
   fig = T,
@@ -46,10 +46,12 @@ summary of the exposure level in the stratum is desired).}
 
 \item{xmax}{max value of the original exposure in each stratum (see note)}
 
+\item{xbreaks}{break points for the stratum x values (see note)}
+
 \item{family}{a description of the error distribution and link function to be
 used in the model. This is a character string naming
 either the gaussian (i.e. "gaussian" for continuous data) or binomial
-(i.e. "binomial" for binary data) family function. This is used for}
+(i.e. "binomial" for binary data) family function.}
 
 \item{ci}{the type of 95\\\% confidence interval. There are three options:
 (i) using the model standard errors ('model_se'), (ii) using bootstrap
@@ -79,8 +81,6 @@ The default is "x".}
 
 \item{ci_fig}{setting confidence interval type. "point" places error bars
 at the mean of each stratum; "line" draws upper and lower piecewise lines.}
-
-\item{xbreaks}{break points for the stratum x values (see note)}
 }
 \value{
 model the model specifications. The first column is the number of

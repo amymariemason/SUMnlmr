@@ -224,7 +224,7 @@ create_summary_data<-function(Ytype, q = 10, keep = FALSE, ...) {
   summ<-create_nlmr_summary(y=y,
                             x=x,
                             g=g,
-                            q=quantiles,
+                            q=q,
                             family="Gaussian",
                             ...)
   summ_data<-summ$summary

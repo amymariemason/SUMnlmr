@@ -1,0 +1,535 @@
+#' Instrumental variable analysis using piecewise linear method based on summary
+#' data
+#'
+#' @description piecewise_summ_mr performs instumental variable analysis by
+#' fitting piecewise linear functions to localised average causal effects
+#'
+#' @note The non-linearity tests uses 'method="DL"' to calculate the p-value for
+#'the hetrogeneity trend. The fractional polynomial equivalent function allows
+#'you to set the method, meaning you may get different results.
+#'@note There is no option for covariates; they would need to be applied at an
+#'earlier stage in the individual data, using the mr_summarise function.
+#'
+#' @param by vector of gene-outcome associations.
+#' @param bx vector of gene-exposure associations.
+#' @param byse vector of standard errors of gene-outcome associations.
+#' @param bxse vector of standard errors of gene-exposure associations.
+#' @param x0mean average value of the iv-free exposure in each stratum (or
+#' whatever summary of the exposure level in the stratum is desired).
+#' @param xmean  average value of the iv-free exposure in each stratum (or
+#' whatever summary of the exposure level in the stratum is desired).
+#' @param xmin min value of the original exposure in each stratum (see note)
+#' @param xmax max value of the original exposure in each stratum (see note)
+#' @param xbreaks break points for the stratum x values (see note)
+#' @param family a description of the error distribution and link function to be
+#'  used in the model. This is a character string naming
+#'  either the gaussian (i.e. "gaussian" for continuous data) or binomial
+#'  (i.e. "binomial" for binary data) family function.
+#' @param ci the type of 95\\% confidence interval. There are three options:
+#' (i) using the model standard errors ('model_se'), (ii) using bootstrap
+#' standard errors ('bootstrap_se'), (iii) using bootstrap percentile
+#' confidence intervals ('bootstrap_per'). The default is the model standard
+#' errors.
+#' @param nboot the number of bootstrap replications (if required). The default
+#' is 1000 replications.
+#' @param fig a logical statement as to whether the user wants the results
+#' displayed in a figure. The default is false.
+#' @param ref the reference point for the figure. This is the value of the
+#' function that represents the expected difference in the outcome compared with
+#'  this reference value when the exposure is set to different values. The
+#'  default is the mean of x.
+#' @param pref_x the prefix/label for the x-axis. The default is "x".
+#' @param pref_x_ref the prefix for the reference value displayed on the y-axis.
+#'  The default is "x".
+#' @param pref_y the prefix/label for the y-axis. The default is "y".
+#' @param breaks breaks on the y-axis of the figure.
+#' @param ci_fig setting confidence interval type. "point" places error bars
+#' at the mean of each stratum; "line" draws upper and lower piecewise lines.
+#' @note The min and max of x stratum values are used to choose the appropiete
+#' range for fitting of each causal estimate. In the code for summarising data,
+#' this is set at the 0.0001% point, and the 99.9999% of each stratum. The first
+#' lower value and all upper value are used to set the break points for the
+#' estimates in the graph. Alternatively you can hardset this using xbreaks.
+#' @return model the model specifications. The first column is the number of
+#' quantiles (q); the second column is the position used to relate x to the LACE
+#'  in each quantiles (xpos); the third column is the type of confidence
+#'  interval constructed (ci); the fourth column is the number of bootstrap
+#'  replications performed (nboot).
+#' @return powers the powers of the chosen polynomial.
+#' @return coefficients the regression estimates. The first column is the
+#' regression coefficients (beta); the second column is the standard errors of
+#' regression coefficients (se); the third column is the lower confidence
+#' interval (lci); the fourth column is the upper confidence interval (uci);
+#' the fifth column is the p-value (pval).
+#' @author Amy Mason, leaning heavily on work by James Statley and Matt Arnold
+#' @import ggplot2
+#' @importFrom matrixStats rowQuantiles
+#' @export
+piecewise_summ_mr <- function(by,
+                              bx,
+                              byse,
+                              bxse,
+                              x0mean,
+                              xmean,
+                              xmin,
+                              xmax,
+                              xbreaks = NULL,
+                              family = "gaussian",
+                              ci = "model_se",
+                              nboot = 1000,
+                              fig = T,
+                              ref = mean(xmean),
+                              pref_x = "x",
+                              pref_x_ref = "x",
+                              pref_y = "y",
+                              breaks = NULL,
+                              ci_fig = "point") {
+  ##### Error messages #####
+  if(!(is.vector(by) & is.vector(bx) & is.vector(byse) & is.vector(bxse))) {
+    stop("either the outcome, exposure or their standard errors is not a
+    vector")
+  }
+  if(!(is.numeric(by) | is.integer(by))) stop("by is not numeric")
+  if(!(is.numeric(bx) | is.integer(bx))) stop("bx is not numeric")
+  if(!(is.numeric(byse) | is.integer(byse))) stop("byse is not numeric")
+  if(!(is.numeric(bxse) | is.integer(bxse))) stop("bxse is not numeric")
+  if(!(is.numeric(x0mean) | is.integer(x0mean))) stop("x0mean is not numeric")
+  if(!(is.numeric(xmean) | is.integer(xmean))) stop("xmean is not numeric")
+  if(!(is.numeric(xmin) | is.integer(xmin))) stop("xmin is not numeric")
+  if(!(is.numeric(xmax) | is.integer(xmax))) stop("xmax is not numeric")
+  if(length(by) <= 1) stop("by single values - cannot
+  calculate multiple quantiles")
+  if(!(length(by) == length(bx))) {
+  stop("the number of observations for the outcome, exposure are not the same")
+  }
+  if(any(is.na(by)) | any(is.na(bx)) | any(is.na(byse))
+    | any(is.na(bxse)) | any(is.na(x0mean)) | any(is.na(xmean))
+    | any(is.na(xmin)) | any(is.na(xmax))) {
+    stop("there are missing values")
+  }
+  if(!(family == "gaussian" | family == "binomial")) {
+    stop('family has to be equal to either "gaussian" or "binomial"')
+  }
+
+
+  ##### define variables #######
+  frac_coef <- by
+  frac_se <- byse
+  xcoef_sub <- bx
+  xcoef_sub_se <- bxse
+  xcoef <- sum(bx * (bxse^(-2))) / sum(bxse^(-2))
+  q <- length(by)
+  coef <- frac_coef / xcoef
+  coef_se <- frac_se / xcoef
+
+  ##### Test of IV-exposure assumption #####
+  p_het <- 1 - pchisq(metafor::rma(xcoef_sub, vi = (xcoef_sub_se)^2)$QE,
+                     df = (q - 1))
+  p_het_trend <- metafor::rma.uni(xcoef_sub ~ x0mean, vi = xcoef_sub_se^2,
+                                  method = "DL")$pval[2]
+
+  ##### Non-linearity tests #####
+  p_quadratic <- metafor::rma(coef ~ x0mean, (coef_se)^2,
+                              method = "FE")$pval[2]
+  p_q <- 1 - pchisq(metafor::rma(coef,
+                                 vi = (coef_se)^2)$QE, df = (q - 1))
+
+  ##### Confidence Inteval ####
+  if (ci == "bootstrap_per" | ci == "bootstrap_se") {
+    boot_coef <-  data.frame(matrix(ncol = q, nrow = nboot))
+    for (i in 1:nboot) {
+      # vary the value of by slightly
+      boot_by <- by + stats::rnorm(q, 0, byse)
+      boot_bx <- bx  + stats::rnorm(q, 0, bxse)
+      # recalculate the causal est based on this
+      boot_xcoef <- sum(boot_bx * (bxse ^ (-2))) / sum(bxse ^ (-2))
+      boot_coef[i, ] <- boot_by / boot_xcoef
+    }
+  }
+
+  if (ci == "bootstrap_se") {
+    cov <- stats::var(boot_coef)
+    se <- sqrt(diag(cov))
+    lci <- coef - 1.96 * se
+    uci <- coef + 1.96 * se
+    pval <- 2 * stats::pnorm(-abs(coef / se))
+  }
+  if (ci == "bootstrap_per") {
+    se <- NA
+    lci <- apply(boot_coef, MARGIN = 2,
+                function(x) stats::quantile(x, probs = 0.025))
+    uci <- apply(boot_coef, MARGIN = 2,
+                function(x) stats::quantile(x, probs = 0.975))
+    pval <- NA
+
+  }
+  if (ci == "model_se") {
+    nboot <- NA
+    se <- coef_se
+    lci <- coef - 1.96 * coef_se
+    uci <- coef + 1.96 * coef_se
+    pval <- 2 * pnorm(-abs(coef / coef_se))
+
+  }
+
+  # estimate range creation
+
+  if (is.null(xbreaks)) {
+    quantiles <- c(min(xmin), sort(xmax))
+  }else{
+        quantiles <- xbreaks
+      }
+
+  ##### Results #####
+  lci <- as.numeric(lci)
+  uci <- as.numeric(uci)
+
+
+  ##### Figure #####
+  if(fig == T) {
+    figure <- piecewise_summ_figure(xcoef = xcoef,
+                coef = coef,
+                lci = lci,
+                uci = uci,
+                xmean = xmean,
+                xbreaks = quantiles,
+                ref = ref,
+                pref_x = pref_x,
+                family = family,
+                pref_x_ref = pref_x_ref,
+                pref_y = pref_y,
+                breaks = breaks,
+                ci_fig = ci_fig)
+  }
+
+  ##### Return #####
+  model <- as.matrix(data.frame(q = q, nboot = nboot))
+  lace <- as.matrix(data.frame(beta = coef,
+                               se = coef_se,
+                               lci = lci,
+                               uci = uci,
+                               pval = pval))
+  rownames(lace) <- seq_len(nrow(lace))
+  xcoef_quant <- as.matrix(data.frame(beta = xcoef_sub, se = xcoef_sub_se))
+  rownames(xcoef_quant) <- seq_len(nrow(xcoef_quant))
+  p_tests <- as.matrix(data.frame(quad = p_quadratic, Q = p_q))
+  p_heterogeneity <- as.matrix(data.frame(Q = p_het, trend = p_het_trend))
+  if(fig == F) {
+    results <- list(model = model,
+                    lace = lace,
+                    xcoef = xcoef_quant,
+                    p_tests = p_tests,
+                    p_heterogeneity = p_heterogeneity)
+  }else{
+    results <- list(model = model,
+                    lace = lace,
+                    xcoef = xcoef_quant,
+                    p_tests = p_tests,
+                    p_heterogeneity = p_heterogeneity,
+                    figure = figure)
+    }
+  class(results) <- "piecewise_summ_mr"
+  return(results)
+
+
+}
+
+
+#' Piecewise linear figure
+#'
+#' piecewise_figure plots the piecewise linear function.
+#' @import matrixStats
+#' @import ggplot2
+#' @param xcoef the association between the exposure and the instrument.
+#' @param coef the coefficients of the localized causal effects.
+#' @param xmean mean of each x stratum (for plotting point estimates)
+#' @param lci upper confidence interval range for each causal effects
+#' @param uci upper confidence interval range for each causal effects.
+#' @param xbreaks breakpoints in x (for plotting line estimates)
+#' @param ref the reference point for the figure. This is the value of the
+#'  that represents the expected difference in the outcome compared with this
+#'  reference value when the exposure is set to different values. The default
+#'  is the mean of x.
+#' @param pref_x the prefix/label for the x-axis. The default is "x".
+#' @param pref_x_ref the prefix for the reference value displayed on the y-axis.
+#'  The default is "x".
+#' @param pref_y the prefix/label for the y-axis. The default is "y".
+#' @param breaks breaks on the y-axis of the figure.
+#' @param family a description of the error distribution and link function to be
+#'  used in the model. This is a character string naming
+#'  either the gaussian (i.e. "gaussian" for continuous data) or binomial
+#'  (i.e. "binomial" for binary data) family function.
+#' @param ci_fig point confidence intervals, or as ribbon ("point" or "ribbon")
+#' @return the plot of the piecewise linear function.
+#' @author Amy Mason <am2609@medschl.cam.ac.uk>,
+#' leaning on work by James Statley and Matt Arnold
+#' @export
+piecewise_summ_figure <- function(xcoef, coef,
+                            xmean, lci, uci,
+                            xbreaks,
+                            family = "gaussian",
+                            ref = mean(xmean),
+                            pref_x = "x",
+                            pref_x_ref = "x",
+                            pref_y = "y",
+                            breaks = NULL,
+                            ci_fig = "point") {
+
+  # set what was variable number of quartiles in main function
+  # forced by data here
+  # q is number of quartiles for both lines and ci
+    q <- length(coef)
+  # these are the x breakpoints in the linear fit
+  m <- xbreaks
+
+  # counting variable
+  l <- q + 1
+
+  # local variables to stop R CMD Check complaining
+  y_lci <- NULL
+  y_uci <- NULL
+
+  # find which section ref point is in
+  for(i in 1:(l - 1)) {
+    if(m[i] <= ref & m[(i + 1)] >= ref) {
+      ref_pos <- i + 1
+      }
+    }
+
+  ### create the y coordinates for these quantiles breaks, based on the
+  ### beta estimates in each quartile
+
+  y_mm <- NULL
+  for(k in 1:l) {
+    if(k == 1) {
+      y_mm[k] <- 0
+      }
+    if(k >= 2) {
+      y_mm[k] <- (coef[k - 1] * m[k] - coef[k - 1] * m[k - 1]) + y_mm[k - 1]
+      }
+    if(k == ref_pos) {
+      y_ref <- (coef[k - 1] * ref - coef[k - 1] * m[k - 1]) + y_mm[k - 1]
+      }
+  }
+
+  # set ref point to zero
+  y_mm_ref <- y_mm - y_ref
+
+ # upper ci
+
+  uci_mm <- NULL
+  for(k in 1:l) {
+    if(k == 1) {
+      uci_mm[k] <- 0
+      }
+    if(k >= 2) {
+      uci_mm[k] <- (uci[k - 1] * m[k] - uci[k - 1] * m[k - 1]) + uci_mm[k - 1]
+      }
+    if(k == ref_pos) {
+      uci_ref <- (uci[k - 1] * ref - uci[k - 1] * m[k - 1]) + uci_mm[k - 1]
+      }
+  }
+  uci_mm_ref <- uci_mm - uci_ref
+
+  # lower ci
+
+  lci_mm <- NULL
+  for(k in 1:l) {
+    if(k == 1) {
+      lci_mm[k] <- 0
+      }
+    if(k >= 2) {
+      lci_mm[k] <- (lci[k - 1] * m[k] - lci[k - 1] * m[k - 1])
+      + lci_mm[k - 1]
+      }
+    if(k == ref_pos) {
+      lci_ref <- (lci[k - 1] * ref - lci[k - 1] * m[k - 1])
+      + lci_mm[k - 1]
+      }
+  }
+  lci_mm_ref <- lci_mm - lci_ref
+
+  # create y-cordinates for the mean of each segment
+  y_mm_quant <- NULL
+  lci_mm_quant <- NULL
+  uci_mm_quant <- NULL
+
+  for(j in 1:q) {
+    x_ci <- xmean[j]
+    # find segment containing the mean of the jth stratum
+    for(i in 1:q) {
+      if(m[i] <= x_ci & m[(i + 1)] >= x_ci) {
+        ci_pos <- i + 1
+        }
+    }
+
+    for(k in 1:l) {
+      if(k == ci_pos) {
+        y_mm_quant[j] <- (coef[k - 1] * x_ci - coef[k - 1] * m[k - 1]) +
+          y_mm[k - 1]
+        lci_mm_quant[j] <- (lci[k - 1] * x_ci - lci[k - 1] * m[k - 1]) +
+          lci_mm[k - 1]
+        uci_mm_quant[j] <- (uci[k - 1] * x_ci - uci[k - 1] * m[k - 1]) +
+          uci_mm[k - 1]
+      }
+    }
+  }
+
+  # rescale to ref point
+  y_mm_quant_ref <- y_mm_quant - y_ref
+  lci_mm_quant_ref <- lci_mm_quant - lci_ref
+  uci_mm_quant_ref <- uci_mm_quant - uci_ref
+
+
+  ##### Figure#####
+  if (family != "binomial") {
+    # collect data
+
+  plot_data <- data.frame(x = m, y = y_mm_ref,
+                          y_lci = lci_mm_ref, y_uci = uci_mm_ref)
+  plot_data1 <- data.frame(x = xmean, y = y_mm_quant_ref,
+                            y_lci = lci_mm_quant_ref,
+                            y_uci = uci_mm_quant_ref)
+  plot_data2 <- data.frame(x = ref, y = 0)
+
+  #set figure
+
+if(ci_fig == "point") {
+  figure <- ggplot2::ggplot(plot_data, aes(x)) +
+    geom_hline(aes(yintercept = 0), colour = "grey") +
+    geom_line(aes(x = x, y = y), colour = "black") +
+    geom_errorbar(aes(x = x, ymin = y_lci, ymax = y_uci), data = plot_data1,
+                  color = "grey", width = 0.025) +
+    geom_point(aes(x = x, y = y), data = plot_data1,
+               colour = "black", size = 2) +
+    geom_point(aes(x = x, y = y), data = plot_data2,
+               colour = "red", size = 2)
+
+}else{
+
+    figure <- ggplot2::ggplot(plot_data, aes(x)) +
+    geom_hline(aes(yintercept = 0), colour = "grey") +
+    geom_ribbon(aes(ymin = y_lci, ymax = y_uci), alpha = 0.15) +
+    geom_line(aes(x = x, y = y), colour = "black")
+
+}
+
+  figure <- figure + theme_bw() + labs(x = pref_x,
+      y = bquote(.(pref_y)~" ["~.(pref_x_ref)["ref"]~" =
+                 "~.(round(ref, 2))~"]")) +
+    theme(axis.title.x = element_text(vjust = 0.5, size = 20),
+          axis.title.y = element_text(vjust = 0.5, size = 20),
+          axis.text.x = element_text(size = 18),
+          axis.text.y = element_text(size = 18)) +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank())
+
+  if(!is.null(breaks)) {
+    figure <- figure + scale_y_continuous(breaks = breaks)
+    }
+}
+if(family == "binomial") {
+  # collect data
+  pref_y <- paste0("Odds ratio of ", pref_y)
+  plot_data <- data.frame(x = m, y = exp(y_mm_ref), y_lci = exp(lci_mm_ref),
+                          y_uci = exp(uci_mm_ref))
+  plot_data1 <- data.frame(x = xmean, y = exp(y_mm_quant_ref),
+                            y_lci = exp(lci_mm_quant_ref),
+                            y_uci = exp(uci_mm_quant_ref))
+  plot_data2 <- data.frame(x = ref, y = 1)
+
+
+  if(ci_fig == "point") {
+    figure <- ggplot2::ggplot(plot_data, aes(x)) +
+      geom_hline(aes(yintercept = 1), colour = "grey") +
+      geom_line(aes(x = x, y = y), colour = "black") +
+      geom_errorbar(aes(x = x, ymin = y_lci, ymax = y_uci), data = plot_data1,
+                    color = "grey", width = 0.025) +
+      geom_point(aes(x = x, y = y), data = plot_data1, colour = "black",
+                 size = 2) +
+      geom_point(aes(x = x, y = y), data = plot_data2, colour = "red",
+                 size = 2)
+
+  }else{
+    figure <- ggplot2::ggplot(plot_data, aes(x)) +
+      geom_hline(aes(yintercept = 1), colour = "grey") +
+      geom_ribbon(aes(ymin = y_lci, ymax = y_uci), alpha = 0.15) +
+      geom_line(aes(x = x, y = y), colour = "black")
+  }
+
+  figure <- figure + theme_bw() + labs(x = pref_x,
+          y = bquote(.(pref_y)~" ["~.(pref_x_ref)["ref"]~" =
+             "~.(round(ref, 2))~"]")) +
+    theme(axis.title.x = element_text(vjust = 0.5, size = 20),
+          axis.title.y = element_text(vjust = 0.5, size = 20),
+          axis.text.x = element_text(size = 18),
+          axis.text.y = element_text(size = 18)) +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank())
+
+  if(!is.null(breaks)) {
+    figure <- figure + scale_y_continuous(trans = "exp", breaks = breaks)
+    }
+
+}
+    return(figure)
+}
+
+
+
+#' Summary of piecewise linear fits
+#'
+#' summary method for class "piecewise_mr".
+#' @param object an object of class "piecewise_mr".
+#' @param ... Arguments to be passed to or from other methods,
+#' @author Amy Mason <am2609@medschl.cam.ac.uk>
+#' @export
+summary.piecewise_summ_mr <- function(object, ...) {
+  model <- as.data.frame(object$model)
+  coefficients <- as.data.frame(object$lace)
+  p_tests <- as.data.frame(object$p_tests)
+  p_heterogeneity <- as.data.frame(object$p_heterogeneity)
+  if(is.null(object$figure)) {
+    summ <- list(model = model,
+    coefficients = coefficients,
+    p_tests = p_tests,
+    p_heterogeneity = p_heterogeneity)
+    }
+  if(!is.null(object$figure)) {
+    summ <- list(model = model,
+    coefficients = coefficients,
+    p_tests = p_tests,
+    p_heterogeneity = p_heterogeneity,
+    figure = object$figure)
+    }
+  class(summ) <- "summary.piecewise_mr"
+  return(summ)
+}
+
+
+#' Print summary of piecewise linear fits
+#'
+#' print summary method for class "piecewise_mr".
+#' @param x an object of class "piecewise_mr".
+#' @param ... Arguments to be passed to or from other methods,
+#' @author Amy Mason <am2609@medschl.cam.ac.uk>
+#' @export
+print.summary.piecewise_summ_mr <- function(x, ...) {
+  cat("Call: piecewise_summ_mr")
+  cat("\n Quantiles: ", as.character(x$model$q), "; Number of bootstrap
+      replications: ", as.character(x$model$nboot), sep = "")
+  cat("\n\nLACE:\n")
+  names(x$coefficients) <- c("Estimate", "Std. Error", "95%CI Lower",
+                             "95%CI Upper", "p.value")
+  printCoefmat(x$coefficients, P.values = TRUE, has.Pvalue = TRUE)
+  cat("\nNon-linearity tests")
+  cat("\nQuadratic p-value:", signif(x$p_tests$quad, digits = 3))
+  cat("\nCochran Q p-value:", signif(x$p_tests$Q, digits = 3))
+  cat("\n\nHeterogeneity tests")
+  cat("\nCochran Q p-value:", signif(x$p_heterogeneity$Q, digits = 3))
+  cat("\nTrend p-value:", signif(x$p_heterogeneity$trend, digits = 3))
+  cat("\n")
+  if(!is.null(x$figure)) {
+    plot(x$figure)
+    }
+}

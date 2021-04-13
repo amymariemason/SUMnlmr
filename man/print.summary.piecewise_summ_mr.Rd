@@ -8,6 +8,8 @@
 }
 \arguments{
 \item{x}{an object of class "piecewise_mr".}
+
+\item{...}{Arguments to be passed to or from other methods,}
 }
 \description{
 print summary method for class "piecewise_mr".
