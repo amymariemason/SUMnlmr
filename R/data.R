@@ -18,3 +18,46 @@
 #'   ...
 #' }
 "bmi_acm"
+
+#' UK Biobank dataset containing the allele score-associations with
+#' ldl-cholesterol and CAD diagnosis, by 10 quantiles of residual ldl.
+#'
+#' @format A data frame with 10 rows and 8 variables:
+#' \describe{
+#'   \item{bx}{linear association between ldl-cholesterol and allele score,
+#'   unadjusted}
+#'    \item{by}{logistic regression coefficent between CAD diagnosis and allele
+#'    score, unadjusted}
+#'   \item{bxse}{standard error for the bx term from the linear
+#'   regression}
+#'   \item{byse}{standard error for the by term from the logistic
+#'   regression}
+#'   \item{x0mean}{Average residual ldl in stratum}
+#'   \item{xmean}{Average ldl in stratum}
+#'   \item{xmin}{Minimum ldl in stratum}
+#'   \item{xmax}{Maximum ldl in stratum}
+#'   ...
+#' }
+"LDL_CAD"
+
+#' UK Biobank dataset containing the allele score-associations with
+#' ldl-cholesterol and CAD diagnosis adjusted for age, sex and first 10
+#' principle components, by 10 quantiles of residual ldl.
+#'
+#' @format A data frame with 10 rows and 8 variables:
+#' \describe{
+#'   \item{bx}{linear association between ldl-cholesterol and allele score,
+#'   adjusted}
+#'    \item{by}{logistic regression coefficent between CAD diagnosis and allele
+#'    score, adjusted}
+#'   \item{bxse}{standard error for the bx term from the linear
+#'   regression}
+#'   \item{byse}{standard error for the by term from the logistic
+#'   regression}
+#'   \item{x0mean}{Average residual ldl in stratum}
+#'   \item{xmean}{Average ldl in stratum}
+#'   \item{xmin}{Minimum ldl in stratum}
+#'   \item{xmax}{Maximum ldl in stratum}
+#'   ...
+#' }
+"LDL_CAD_covar"

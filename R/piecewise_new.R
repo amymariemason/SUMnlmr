@@ -63,7 +63,10 @@
 #' the fifth column is the p-value (pval).
 #' @author Amy Mason, leaning heavily on work by James Statley and Matt Arnold
 #' @import ggplot2
+#' @import stats
 #' @importFrom matrixStats rowQuantiles
+#' @importFrom metafor rma
+#' @importFrom metafor rma.uni
 #' @export
 piecewise_summ_mr <- function(by,
                               bx,
@@ -125,24 +128,23 @@ piecewise_summ_mr <- function(by,
   coef_se <- frac_se / xcoef
 
   ##### Test of IV-exposure assumption #####
-  p_het <- 1 - pchisq(metafor::rma(xcoef_sub, vi = (xcoef_sub_se)^2)$QE,
+  p_het <- 1 - pchisq(rma(xcoef_sub, vi = (xcoef_sub_se)^2)$QE,
                      df = (q - 1))
-  p_het_trend <- metafor::rma.uni(xcoef_sub ~ x0mean, vi = xcoef_sub_se^2,
+  p_het_trend <- rma.uni(xcoef_sub ~ x0mean, vi = xcoef_sub_se^2,
                                   method = "DL")$pval[2]
 
   ##### Non-linearity tests #####
-  p_quadratic <- metafor::rma(coef ~ x0mean, (coef_se)^2,
+  p_quadratic <- rma(coef ~ x0mean, (coef_se)^2,
                               method = "FE")$pval[2]
-  p_q <- 1 - pchisq(metafor::rma(coef,
-                                 vi = (coef_se)^2)$QE, df = (q - 1))
+  p_q <- 1 - pchisq(rma(coef, vi = (coef_se)^2)$QE, df = (q - 1))
 
   ##### Confidence Inteval ####
   if (ci == "bootstrap_per" | ci == "bootstrap_se") {
     boot_coef <-  data.frame(matrix(ncol = q, nrow = nboot))
     for (i in 1:nboot) {
       # vary the value of by slightly
-      boot_by <- by + stats::rnorm(q, 0, byse)
-      boot_bx <- bx  + stats::rnorm(q, 0, bxse)
+      boot_by <- by + rnorm(q, 0, byse)
+      boot_bx <- bx  + rnorm(q, 0, bxse)
       # recalculate the causal est based on this
       boot_xcoef <- sum(boot_bx * (bxse ^ (-2))) / sum(bxse ^ (-2))
       boot_coef[i, ] <- boot_by / boot_xcoef
@@ -150,18 +152,18 @@ piecewise_summ_mr <- function(by,
   }
 
   if (ci == "bootstrap_se") {
-    cov <- stats::var(boot_coef)
+    cov <- var(boot_coef)
     se <- sqrt(diag(cov))
     lci <- coef - 1.96 * se
     uci <- coef + 1.96 * se
-    pval <- 2 * stats::pnorm(-abs(coef / se))
+    pval <- 2 * pnorm(-abs(coef / se))
   }
   if (ci == "bootstrap_per") {
     se <- NA
     lci <- apply(boot_coef, MARGIN = 2,
-                function(x) stats::quantile(x, probs = 0.025))
+                function(x) quantile(x, probs = 0.025))
     uci <- apply(boot_coef, MARGIN = 2,
-                function(x) stats::quantile(x, probs = 0.975))
+                function(x) quantile(x, probs = 0.975))
     pval <- NA
 
   }
@@ -265,6 +267,7 @@ piecewise_summ_mr <- function(by,
 #' @return the plot of the piecewise linear function.
 #' @author Amy Mason <am2609@medschl.cam.ac.uk>,
 #' leaning on work by James Statley and Matt Arnold
+#' @import ggplot2
 #' @export
 piecewise_summ_figure <- function(xcoef, coef,
                             xmean, lci, uci,
@@ -302,49 +305,35 @@ piecewise_summ_figure <- function(xcoef, coef,
   ### beta estimates in each quartile
 
   y_mm <- NULL
-  y_mm[1]<-0
+  uci_mm <- NULL
+  lci_mm <- NULL
+
+  y_mm[1] <- 0
+  uci_mm[1] <- 0
+  lci_mm[1] <-  0
+
   for(k in 2:l) {
       y_mm[k] <- (coef[k - 1] * m[k] - coef[k - 1] * m[k - 1]) + y_mm[k - 1]
+      uci_mm[k] <- uci[k - 1] * m[k] - uci[k - 1] * m[k - 1] + uci_mm[k - 1]
+      lci_mm[k] <- lci[k - 1] * m[k] - lci[k - 1] * m[k - 1] + lci_mm[k - 1]
   }
+  # create reference points
   y_ref <- coef[ref_pos - 1] * ref -
               coef[ref_pos - 1] * m[ref_pos - 1] +
               y_mm[ref_pos - 1]
 
-  # set ref point to zero
+  uci_ref <- uci[ref_pos - 1] * ref -
+    uci[ref_pos - 1] * m[ref_pos - 1] +
+    uci_mm[ref_pos - 1]
+
+  lci_ref <- lci[ref_pos - 1] * ref -
+    lci[ref_pos - 1] * m[ref_pos - 1] +
+    lci_mm[ref_pos - 1]
+
+  # set ref points to zero
   y_mm_ref <- y_mm - y_ref
 
- # upper ci
-
-  uci_mm <- NULL
-  for(k in 1:l) {
-    if(k == 1) {
-      uci_mm[k] <- 0
-      }
-    if(k >= 2) {
-      uci_mm[k] <- (uci[k - 1] * m[k] - uci[k - 1] * m[k - 1]) + uci_mm[k - 1]
-      }
-    if(k == ref_pos) {
-      uci_ref <- (uci[k - 1] * ref - uci[k - 1] * m[k - 1]) + uci_mm[k - 1]
-      }
-  }
   uci_mm_ref <- uci_mm - uci_ref
-
-  # lower ci
-
-  lci_mm <- NULL
-  for(k in 1:l) {
-    if(k == 1) {
-      lci_mm[k] <- 0
-      }
-    if(k >= 2) {
-      lci_mm[k] <- (lci[k - 1] * m[k] - lci[k - 1] * m[k - 1])
-      + lci_mm[k - 1]
-      }
-    if(k == ref_pos) {
-      lci_ref <- (lci[k - 1] * ref - lci[k - 1] * m[k - 1])
-      + lci_mm[k - 1]
-      }
-  }
   lci_mm_ref <- lci_mm - lci_ref
 
   # create y-cordinates for the mean of each segment
@@ -361,17 +350,17 @@ piecewise_summ_figure <- function(xcoef, coef,
         }
     }
 
-    for(k in 1:l) {
-      if(k == ci_pos) {
-        y_mm_quant[j] <- (coef[k - 1] * x_ci - coef[k - 1] * m[k - 1]) +
-          y_mm[k - 1]
-        lci_mm_quant[j] <- (lci[k - 1] * x_ci - lci[k - 1] * m[k - 1]) +
-          lci_mm[k - 1]
-        uci_mm_quant[j] <- (uci[k - 1] * x_ci - uci[k - 1] * m[k - 1]) +
-          uci_mm[k - 1]
-      }
-    }
+    y_mm_quant[j] <- coef[ci_pos - 1] * x_ci -
+                      coef[ci_pos - 1] * m[ci_pos - 1] +
+                      y_mm[ci_pos - 1]
+    lci_mm_quant[j] <- lci[ci_pos - 1] * x_ci -
+                        lci[ci_pos - 1] * m[ci_pos - 1] +
+                        lci_mm[ci_pos - 1]
+    uci_mm_quant[j] <- uci[ci_pos - 1] * x_ci -
+                        uci[ci_pos - 1] * m[ci_pos - 1] +
+                        uci_mm[ci_pos - 1]
   }
+
 
   # rescale to ref point
   y_mm_quant_ref <- y_mm_quant - y_ref
@@ -393,7 +382,7 @@ piecewise_summ_figure <- function(xcoef, coef,
   #set figure
 
 if(ci_fig == "point") {
-  figure <- ggplot2::ggplot(plot_data, aes(x)) +
+  figure <- ggplot(plot_data, aes(x)) +
     geom_hline(aes(yintercept = 0), colour = "grey") +
     geom_line(aes(x = x, y = y), colour = "black") +
     geom_errorbar(aes(x = x, ymin = y_lci, ymax = y_uci), data = plot_data1,
@@ -405,7 +394,7 @@ if(ci_fig == "point") {
 
 }else{
 
-    figure <- ggplot2::ggplot(plot_data, aes(x)) +
+    figure <- ggplot(plot_data, aes(x)) +
     geom_hline(aes(yintercept = 0), colour = "grey") +
     geom_ribbon(aes(ymin = y_lci, ymax = y_uci), alpha = 0.15) +
     geom_line(aes(x = x, y = y), colour = "black")
@@ -425,8 +414,7 @@ if(ci_fig == "point") {
   if(!is.null(breaks)) {
     figure <- figure + scale_y_continuous(breaks = breaks)
     }
-}
-if(family == "binomial") {
+}else{
   # collect data
   pref_y <- paste0("Odds ratio of ", pref_y)
   plot_data <- data.frame(x = m, y = exp(y_mm_ref), y_lci = exp(lci_mm_ref),
@@ -438,7 +426,7 @@ if(family == "binomial") {
 
 
   if(ci_fig == "point") {
-    figure <- ggplot2::ggplot(plot_data, aes(x)) +
+    figure <- ggplot(plot_data, aes(x)) +
       geom_hline(aes(yintercept = 1), colour = "grey") +
       geom_line(aes(x = x, y = y), colour = "black") +
       geom_errorbar(aes(x = x, ymin = y_lci, ymax = y_uci), data = plot_data1,
@@ -449,7 +437,7 @@ if(family == "binomial") {
                  size = 2)
 
   }else{
-    figure <- ggplot2::ggplot(plot_data, aes(x)) +
+    figure <- ggplot(plot_data, aes(x)) +
       geom_hline(aes(yintercept = 1), colour = "grey") +
       geom_ribbon(aes(ymin = y_lci, ymax = y_uci), alpha = 0.15) +
       geom_line(aes(x = x, y = y), colour = "black")

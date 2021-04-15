@@ -1,0 +1,109 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# SUMnlmr
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The goal of SUMnlmr is to allow investigations of potentially non-linear 
+relationships between an exposure and an outcome via a Mendelian randomization
+framework, without requiring full access to individual level genetic data.
+
+It is based on the existing package for individual data by James Staley: nlmr (available from  https://github.com/jrs95/nlmr ). 
+
+The core concept is to split the process into two distinct halfs: one requiring 
+individual level data, which is converted into a semi-summarized form (create_nlmr_summary) by dividing the population into strata based on the 
+IV-free exposure. Associations with the exposure and the outcome are estimated 
+in each stratum.
+In the second half, this semi-summarized form can then be shared, without 
+compromising patient privacy, and investigated seperately using two IV methods:
+a fractional polynomial method (frac_poly_summ_mr) and a piecewise linear method (piecewise_summ_mr). Both methods calculate a localised causal effect (LACE). 
+The piecewise method fits a continuous piecewise linear function to these 
+estimates, while the fractional polynomial method fits the best 1 or 2 term 
+fractional polynomial.
+
+
+## Functions
+*create_nlmr_summary* - prepares individual level data into semi-summarised form,
+ready to fit nlmr models.
+*fracpoly_summ_mr* - this method performs IV analysis using fractional polynomials
+*piecewise_summ_mr* - this method performs IV analysis using piecewise linear 
+function
+
+## Installation
+
+You can install the released version of SUMnlmr from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("amymariemason/SUMnlmr")
+```
+## Example 1: Summarizing data
+
+This is a basic example which shows you how to create the semi-summarized data 
+form. First we create some practise data:
+
+```{r example}
+library(SUMnlmr)
+## create some data to practise on
+test_data<-create_ind_data(N=10000)
+head(test_data)
+```
+
+Then we use create_nlmr_summary to summarise it.
+
+```{r example2}
+
+## create the summarized form
+summ_data<-create_nlmr_summary(y = test_data$quadratic.Y,
+                                x = test_data$X,
+                                g = test_data$g,
+                                covar = NULL,
+                                family = "gaussian",
+                                q = 10)
+
+head(summ_data)
+```
+If we have co-variants we want to adjust for in our analysis, we need to include
+them at this stage. 
+
+```{r example3}
+
+## create the summarized form
+summ_covar<-create_nlmr_summary(y = test_data$quadratic.Y,
+                                x = test_data$X,
+                                g = test_data$g,
+                                covar = matrix(data=c(test_data$linear.Y,
+                                                      test_data$sqrt.Y),ncol=2),
+                                family = "gaussian",
+                                q = 10)
+
+head(summ_covar)
+```
+
+These have used a single genetic variant count, but the method works identically 
+with an genetic score function for g instead. 
+
+Once your data is in this format, the output data frame is all you need to share
+to fit the fractional polynomial or piecewise linear models onto the data.
+
+## Example 2: Fitting a fractional polynomial model
+
+```{r pressure, echo = FALSE}
+
+```
+
+In that case, don't forget to commit and push the resulting figure files, so they display on GitHub!
