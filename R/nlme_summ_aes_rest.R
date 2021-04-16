@@ -121,8 +121,8 @@ frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = 1,
 
     ##### Test of IV-exposure assumption #####
     p_het <- 1 - stats::pchisq(rma(xcoef_sub,
-                                            vi = (xcoef_sub_se)^2)$QE,
-                                            df = (q - 1))
+                                      vi = (xcoef_sub_se)^2)$QE,
+                                      df = (q - 1))
     p_het_trend <- rma.uni(xcoef_sub ~ xmean,
                                     vi = xcoef_sub_se^2,
                                     method = method)$pval[2]

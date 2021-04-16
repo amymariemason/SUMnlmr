@@ -402,8 +402,7 @@ if(ci_fig == "point") {
 }
 
   figure <- figure + theme_bw() + labs(x = pref_x,
-      y = bquote(.(pref_y)~" ["~.(pref_x_ref)["ref"]~" =
-                 "~.(round(ref, 2))~"]")) +
+  y = bquote(.(pref_y)~" ["~.(pref_x_ref)["ref"]~" = "~.(round(ref, 2))~"]")) +
     theme(axis.title.x = element_text(vjust = 0.5, size = 20),
           axis.title.y = element_text(vjust = 0.5, size = 20),
           axis.text.x = element_text(size = 18),
@@ -444,8 +443,7 @@ if(ci_fig == "point") {
   }
 
   figure <- figure + theme_bw() + labs(x = pref_x,
-          y = bquote(.(pref_y)~" ["~.(pref_x_ref)["ref"]~" =
-             "~.(round(ref, 2))~"]")) +
+y = bquote(.(pref_y)~" ["~.(pref_x_ref)["ref"]~" ="~.(round(ref, 2))~"]")) +
     theme(axis.title.x = element_text(vjust = 0.5, size = 20),
           axis.title.y = element_text(vjust = 0.5, size = 20),
           axis.text.x = element_text(size = 18),

@@ -59,7 +59,8 @@ form. First we create some practise data:
 ```{r example}
 library(SUMnlmr)
 ## create some data to practise on
-test_data<-create_ind_data(N=10000)
+test_data<-create_ind_data(N=10000, beta2=2, beta1=1)
+# this creates quadratic.Y  = x + 2x^2 + errorY 
 head(test_data)
 ```
 
@@ -68,6 +69,7 @@ Then we use create_nlmr_summary to summarise it.
 ```{r example2}
 
 ## create the summarized form
+## 
 summ_data<-create_nlmr_summary(y = test_data$quadratic.Y,
                                 x = test_data$X,
                                 g = test_data$g,
@@ -102,8 +104,148 @@ to fit the fractional polynomial or piecewise linear models onto the data.
 
 ## Example 2: Fitting a fractional polynomial model
 
-```{r pressure, echo = FALSE}
+Your data needs to be in the semi-summarised form as shown above. We can then
+fit a fractional polynomial model:
+
+```{r example4}
+
+
+model<- with(summ_data$summary, frac_poly_summ_mr(bx=bx,
+                  by=by, 
+                  bxse=bxse, 
+                  byse=byse, 
+                  xmean=xmean,
+                  family="gaussian",
+                  fig=TRUE)
+)
+
+
+summary(model)
+
 
 ```
+This also produces a graph of the fit with 95% confidence intervals.
+This is a ggplot object and can be adjusted with ggplot commands
+```{r example 5}
+library(ggplot2)
+f <- function(x) (x + 2*x^2 - mean(summ_data$summary$xmean) -
+                    2*mean(summ_data$summary$xmean)^2 )
 
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub!
+plot1 <- model$figure+ 
+  stat_function(fun = f, colour = "green") +
+  ggtitle("fractional polynomial fit from semi-summarized data")
+
+plot1
+```
+There is also p-values provided in p_test and p_het. This is identical to the 
+testing provided by the nlmr package: 
+* fp_d1_d2 :  test between the fractional polynomial degrees
+* fp : fractional polynomial non-linearity test 
+* quad: quadratic test
+* Q : Cochran Q test
+and 
+* Q: Cochran Q heterogeneity test
+* trend: trend test
+
+``` {r example 6}
+model$p_tests
+
+model$p_heterogeneity
+```
+
+## Example 3: Piecewise linear model
+
+We can instead fit a piecewise linear model to the same summarised data
+
+```{r pl example}
+
+model2 <-with(summ_data$summary, piecewise_summ_mr(by, bx, byse, bxse, x0mean, xmean, xmin,xmax, 
+                  ci="bootstrap_se",
+                  nboot=1000, 
+                  fig=TRUE,
+                  family="gaussian",
+                  ci_fig="ribbon")
+)
+
+summary(model2)
+
+
+```
+Again the figure is a ggplot object and can be adjusted similarly. 
+
+```{r pl2}
+plot2 <- model2$figure+ 
+  stat_function(fun = f, colour = "green") +
+  ggtitle("piecewise linear fit from semi-summarized data")
+
+plot2
+```
+
+## Example 4: Binary outcome
+
+The functions above can also fit binary outcome data, via a generalised linear 
+model. 
+
+``` {r bin}
+
+test_data$y.bin<-stats::rbinom(size=1, p=0.5, n=10000)
+
+# create semo-summ data
+summ_bin<-create_nlmr_summary(y = test_data$y.bin,
+                                x = test_data$X,
+                                g = test_data$g,
+                                covar = NULL,
+                                family = "binomial",
+                                q = 10)
+
+# fit fractional poly model
+
+
+model3<- with(summ_bin$summary,frac_poly_summ_mr(bx=bx,
+                  by=by, 
+                  bxse=bxse, 
+                  byse=byse, 
+                  xmean=xmean,
+                  family="gaussian",
+                  fig=TRUE)
+)
+
+summary(model3)
+
+
+```
+Not unsurprisingly, we find no evidence of an effect, causal or otherwise, 
+as the binary outcome was randomly distributed. 
+
+If we look instead at the semi-summarised UK Biobank datasets on LDL-cholesterol 
+and CAD, one with and one without covariates. Here we can see a potentially 
+non-linear trend in the univariate data, which becomes a clear linear trend once
+covariates are included.
+
+```{r bi2}
+
+# fit piecewise linear model
+model4 <-with(LDL_CAD, piecewise_summ_mr(by, bx, byse, bxse, x0mean, xmean, xmin,xmax, 
+                  ci="bootstrap_se",
+                  nboot=1000, 
+                  fig=TRUE,
+                  family="gaussian",
+                  ci_fig="ribbon")
+)
+
+
+summary(model4)
+
+
+# fit piecewise linear model
+model5 <-with(LDL_CAD_covar,piecewise_summ_mr(by, bx, byse, bxse, x0mean, xmean, xmin,xmax, 
+                  ci="bootstrap_se",
+                  nboot=1000, 
+                  fig=TRUE,
+                  family="gaussian",
+                  ci_fig="ribbon")
+)
+
+summary(model5)
+
+```

@@ -24,7 +24,7 @@
 #' @author Amy Mason, leaning heavily on work by James Statley and Matt Arnold
 #' @import ggplot2
 #' @import matrixStats
-#' @import nlmr iv_free
+#' @importFrom nlmr iv_free
 #' @importFrom stats quantile
 #' @export
 create_nlmr_summary <- function(y,
