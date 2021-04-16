@@ -22,15 +22,18 @@ The goal of SUMnlmr is to allow investigations of potentially non-linear
 relationships between an exposure and an outcome via a Mendelian randomization
 framework, without requiring full access to individual level genetic data.
 
-It is based on the existing package for individual data by James Staley: nlmr (available from  https://github.com/jrs95/nlmr ). 
+It is based on the existing package for individual data by James Staley: nlmr 
+(available from  https://github.com/jrs95/nlmr ). 
 
 The core concept is to split the process into two distinct halfs: one requiring 
-individual level data, which is converted into a semi-summarized form (create_nlmr_summary) by dividing the population into strata based on the 
+individual level data, which is converted into a semi-summarized form 
+(create_nlmr_summary) by dividing the population into strata based on the 
 IV-free exposure. Associations with the exposure and the outcome are estimated 
 in each stratum.
 In the second half, this semi-summarized form can then be shared, without 
 compromising patient privacy, and investigated seperately using two IV methods:
-a fractional polynomial method (frac_poly_summ_mr) and a piecewise linear method (piecewise_summ_mr). Both methods calculate a localised causal effect (LACE). 
+a fractional polynomial method (frac_poly_summ_mr) and a piecewise linear method
+(piecewise_summ_mr). Both methods calculate a localised causal effect (LACE). 
 The piecewise method fits a continuous piecewise linear function to these 
 estimates, while the fractional polynomial method fits the best 1 or 2 term 
 fractional polynomial.
@@ -39,13 +42,15 @@ fractional polynomial.
 ## Functions
 *create_nlmr_summary* - prepares individual level data into semi-summarised form,
 ready to fit nlmr models.
-*fracpoly_summ_mr* - this method performs IV analysis using fractional polynomials
+*fracpoly_summ_mr* - this method performs IV analysis using fractional 
+polynomials
 *piecewise_summ_mr* - this method performs IV analysis using piecewise linear 
 function
 
 ## Installation
 
-You can install the released version of SUMnlmr from [GitHub](https://github.com/) with:
+You can install the released version of SUMnlmr from 
+[GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
