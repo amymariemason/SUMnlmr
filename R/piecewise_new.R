@@ -5,10 +5,10 @@
 #' fitting piecewise linear functions to localised average causal effects
 #'
 #' @note The non-linearity tests uses 'method="DL"' to calculate the p-value for
-#'the hetrogeneity trend. The fractional polynomial equivalent function allows
-#'you to set the method, meaning you may get different results.
-#'@note There is no option for covariates; they would need to be applied at an
-#'earlier stage in the individual data, using the mr_summarise function.
+#' the hetrogeneity trend. The fractional polynomial equivalent function allows
+#' you to set the method, meaning you may get different results.
+#' @note There is no option for covariates; they would need to be applied at an
+#' earlier stage in the individual data, using the mr_summarise function.
 #'
 #' @param by vector of gene-outcome associations.
 #' @param bx vector of gene-exposure associations.
@@ -90,31 +90,31 @@ piecewise_summ_mr <- function(by,
   ##### Error messages #####
 
   stopifnot(is.vector(by),
-            is.vector(bx),
-            is.vector(byse),
-            is.vector(bxse),
-            "by is not numeric" = (is.numeric(by) | is.integer(by)),
-            "bx is not numeric" = (is.numeric(bx) | is.integer(bx)),
-            "byse is not numeric" = (is.numeric(byse) | is.integer(byse)),
-            "bxse is not numeric" = (is.numeric(bxse) | is.integer(bxse)),
-            "x0mean is not numeric" = (is.numeric(x0mean) | is.integer(x0mean)),
-            "xmean is not numeric" = (is.numeric(xmean) | is.integer(xmean)),
-            "xmin is not numeric" = (is.numeric(xmin) | is.integer(xmin)),
-            "xmax is not numeric" = (is.numeric(xmax) | is.integer(xmax)),
-            "by is single value - cannot calculate multiple quantiles" =
-              length(by) > 1,
-            "difference number of observations for the outcome & exposure" =
-              length(by) == length(bx),
-            "missing by values" = !anyNA(by),
-            "missing bx values" = !anyNA(bx),
-            "missing byse values" = !anyNA(byse),
-            "missing bxse values" = !anyNA(bxse),
-            "missing x0mean values" = !anyNA(x0mean),
-            "missing xmean values" = !anyNA(xmean),
-            "missing xmin values" = !anyNA(xmin),
-            "missing xmax values" = !anyNA(xmax),
-            "family has to be either gaussian or binomial" =
-              family %in% c("gaussian", "binomial")
+    is.vector(bx),
+    is.vector(byse),
+    is.vector(bxse),
+    "by is not numeric" = (is.numeric(by) | is.integer(by)),
+    "bx is not numeric" = (is.numeric(bx) | is.integer(bx)),
+    "byse is not numeric" = (is.numeric(byse) | is.integer(byse)),
+    "bxse is not numeric" = (is.numeric(bxse) | is.integer(bxse)),
+    "x0mean is not numeric" = (is.numeric(x0mean) | is.integer(x0mean)),
+    "xmean is not numeric" = (is.numeric(xmean) | is.integer(xmean)),
+    "xmin is not numeric" = (is.numeric(xmin) | is.integer(xmin)),
+    "xmax is not numeric" = (is.numeric(xmax) | is.integer(xmax)),
+    "by is single value - cannot calculate multiple quantiles" =
+      length(by) > 1,
+    "difference number of observations for the outcome & exposure" =
+      length(by) == length(bx),
+    "missing by values" = !anyNA(by),
+    "missing bx values" = !anyNA(bx),
+    "missing byse values" = !anyNA(byse),
+    "missing bxse values" = !anyNA(bxse),
+    "missing x0mean values" = !anyNA(x0mean),
+    "missing xmean values" = !anyNA(xmean),
+    "missing xmin values" = !anyNA(xmin),
+    "missing xmax values" = !anyNA(xmax),
+    "family has to be either gaussian or binomial" =
+      family %in% c("gaussian", "binomial")
   )
 
   ##### define variables #######
@@ -122,31 +122,35 @@ piecewise_summ_mr <- function(by,
   frac_se <- byse
   xcoef_sub <- bx
   xcoef_sub_se <- bxse
-  xcoef <- sum(bx * (bxse ^ (-2))) / sum(bxse ^ (-2))
+  xcoef <- sum(bx * (bxse^(-2))) / sum(bxse^(-2))
   q <- length(by)
   coef <- frac_coef / xcoef
   coef_se <- frac_se / xcoef
 
   ##### Test of IV-exposure assumption #####
   p_het <- 1 - pchisq(rma(xcoef_sub, vi = (xcoef_sub_se)^2)$QE,
-                     df = (q - 1))
-  p_het_trend <- rma.uni(xcoef_sub ~ x0mean, vi = xcoef_sub_se^2,
-                                  method = "DL")$pval[2]
+    df = (q - 1)
+  )
+  p_het_trend <- rma.uni(xcoef_sub ~ x0mean,
+    vi = xcoef_sub_se^2,
+    method = "DL"
+  )$pval[2]
 
   ##### Non-linearity tests #####
   p_quadratic <- rma(coef ~ x0mean, (coef_se)^2,
-                              method = "FE")$pval[2]
+    method = "FE"
+  )$pval[2]
   p_q <- 1 - pchisq(rma(coef, vi = (coef_se)^2)$QE, df = (q - 1))
 
   ##### Confidence Inteval ####
   if (ci == "bootstrap_per" | ci == "bootstrap_se") {
-    boot_coef <-  data.frame(matrix(ncol = q, nrow = nboot))
+    boot_coef <- data.frame(matrix(ncol = q, nrow = nboot))
     for (i in 1:nboot) {
       # vary the value of by slightly
       boot_by <- by + rnorm(q, 0, byse)
-      boot_bx <- bx  + rnorm(q, 0, bxse)
+      boot_bx <- bx + rnorm(q, 0, bxse)
       # recalculate the causal est based on this
-      boot_xcoef <- sum(boot_bx * (bxse ^ (-2))) / sum(bxse ^ (-2))
+      boot_xcoef <- sum(boot_bx * (bxse^(-2))) / sum(bxse^(-2))
       boot_coef[i, ] <- boot_by / boot_xcoef
     }
   }
@@ -160,12 +164,15 @@ piecewise_summ_mr <- function(by,
   }
   if (ci == "bootstrap_per") {
     se <- NA
-    lci <- apply(boot_coef, MARGIN = 2,
-                function(x) quantile(x, probs = 0.025))
-    uci <- apply(boot_coef, MARGIN = 2,
-                function(x) quantile(x, probs = 0.975))
+    lci <- apply(boot_coef,
+      MARGIN = 2,
+      function(x) quantile(x, probs = 0.025)
+    )
+    uci <- apply(boot_coef,
+      MARGIN = 2,
+      function(x) quantile(x, probs = 0.975)
+    )
     pval <- NA
-
   }
   if (ci == "model_se") {
     nboot <- NA
@@ -173,16 +180,15 @@ piecewise_summ_mr <- function(by,
     lci <- coef - 1.96 * coef_se
     uci <- coef + 1.96 * coef_se
     pval <- 2 * pnorm(-abs(coef / coef_se))
-
   }
 
   # estimate range creation
 
   if (is.null(xbreaks)) {
     quantiles <- c(min(xmin), sort(xmax))
-  }else{
-        quantiles <- xbreaks
-      }
+  } else {
+    quantiles <- xbreaks
+  }
 
   ##### Results #####
   lci <- as.numeric(lci)
@@ -190,52 +196,58 @@ piecewise_summ_mr <- function(by,
 
 
   ##### Figure #####
-  if(fig == T) {
-    figure <- piecewise_summ_figure(xcoef = xcoef,
-                coef = coef,
-                lci = lci,
-                uci = uci,
-                xmean = xmean,
-                xbreaks = quantiles,
-                ref = ref,
-                pref_x = pref_x,
-                family = family,
-                pref_x_ref = pref_x_ref,
-                pref_y = pref_y,
-                breaks = breaks,
-                ci_fig = ci_fig)
+  if (fig == T) {
+    figure <- piecewise_summ_figure(
+      xcoef = xcoef,
+      coef = coef,
+      lci = lci,
+      uci = uci,
+      xmean = xmean,
+      xbreaks = quantiles,
+      ref = ref,
+      pref_x = pref_x,
+      family = family,
+      pref_x_ref = pref_x_ref,
+      pref_y = pref_y,
+      breaks = breaks,
+      ci_fig = ci_fig
+    )
   }
 
   ##### Return #####
   model <- as.matrix(data.frame(q = q, nboot = nboot))
-  lace <- as.matrix(data.frame(beta = coef,
-                               se = coef_se,
-                               lci = lci,
-                               uci = uci,
-                               pval = pval))
+  lace <- as.matrix(data.frame(
+    beta = coef,
+    se = coef_se,
+    lci = lci,
+    uci = uci,
+    pval = pval
+  ))
   rownames(lace) <- seq_len(nrow(lace))
   xcoef_quant <- as.matrix(data.frame(beta = xcoef_sub, se = xcoef_sub_se))
   rownames(xcoef_quant) <- seq_len(nrow(xcoef_quant))
   p_tests <- as.matrix(data.frame(quad = p_quadratic, Q = p_q))
   p_heterogeneity <- as.matrix(data.frame(Q = p_het, trend = p_het_trend))
-  if(fig == F) {
-    results <- list(model = model,
-                    lace = lace,
-                    xcoef = xcoef_quant,
-                    p_tests = p_tests,
-                    p_heterogeneity = p_heterogeneity)
-  }else{
-    results <- list(model = model,
-                    lace = lace,
-                    xcoef = xcoef_quant,
-                    p_tests = p_tests,
-                    p_heterogeneity = p_heterogeneity,
-                    figure = figure)
-    }
+  if (fig == F) {
+    results <- list(
+      model = model,
+      lace = lace,
+      xcoef = xcoef_quant,
+      p_tests = p_tests,
+      p_heterogeneity = p_heterogeneity
+    )
+  } else {
+    results <- list(
+      model = model,
+      lace = lace,
+      xcoef = xcoef_quant,
+      p_tests = p_tests,
+      p_heterogeneity = p_heterogeneity,
+      figure = figure
+    )
+  }
   class(results) <- "piecewise_summ_mr"
   return(results)
-
-
 }
 
 
@@ -270,20 +282,20 @@ piecewise_summ_mr <- function(by,
 #' @import ggplot2
 #' @export
 piecewise_summ_figure <- function(xcoef, coef,
-                            xmean, lci, uci,
-                            xbreaks,
-                            family = "gaussian",
-                            ref = mean(xmean),
-                            pref_x = "x",
-                            pref_x_ref = "x",
-                            pref_y = "y",
-                            breaks = NULL,
-                            ci_fig = "point") {
+                                  xmean, lci, uci,
+                                  xbreaks,
+                                  family = "gaussian",
+                                  ref = mean(xmean),
+                                  pref_x = "x",
+                                  pref_x_ref = "x",
+                                  pref_y = "y",
+                                  breaks = NULL,
+                                  ci_fig = "point") {
 
   # set what was variable number of quartiles in main function
   # forced by data here
   # q is number of quartiles for both lines and ci
-    q <- length(coef)
+  q <- length(coef)
   # these are the x breakpoints in the linear fit
   m <- xbreaks
 
@@ -295,11 +307,11 @@ piecewise_summ_figure <- function(xcoef, coef,
   y_uci <- NULL
 
   # find which section ref point is in
-  for(i in 1:q) {
-    if(m[i] <= ref & m[(i + 1)] >= ref) {
+  for (i in 1:q) {
+    if (m[i] <= ref & m[(i + 1)] >= ref) {
       ref_pos <- i + 1
-      }
     }
+  }
 
   ### create the y coordinates for these quantiles breaks, based on the
   ### beta estimates in each quartile
@@ -310,17 +322,17 @@ piecewise_summ_figure <- function(xcoef, coef,
 
   y_mm[1] <- 0
   uci_mm[1] <- 0
-  lci_mm[1] <-  0
+  lci_mm[1] <- 0
 
-  for(k in 2:l) {
-      y_mm[k] <- (coef[k - 1] * m[k] - coef[k - 1] * m[k - 1]) + y_mm[k - 1]
-      uci_mm[k] <- uci[k - 1] * m[k] - uci[k - 1] * m[k - 1] + uci_mm[k - 1]
-      lci_mm[k] <- lci[k - 1] * m[k] - lci[k - 1] * m[k - 1] + lci_mm[k - 1]
+  for (k in 2:l) {
+    y_mm[k] <- (coef[k - 1] * m[k] - coef[k - 1] * m[k - 1]) + y_mm[k - 1]
+    uci_mm[k] <- uci[k - 1] * m[k] - uci[k - 1] * m[k - 1] + uci_mm[k - 1]
+    lci_mm[k] <- lci[k - 1] * m[k] - lci[k - 1] * m[k - 1] + lci_mm[k - 1]
   }
   # create reference points
   y_ref <- coef[ref_pos - 1] * ref -
-              coef[ref_pos - 1] * m[ref_pos - 1] +
-              y_mm[ref_pos - 1]
+    coef[ref_pos - 1] * m[ref_pos - 1] +
+    y_mm[ref_pos - 1]
 
   uci_ref <- uci[ref_pos - 1] * ref -
     uci[ref_pos - 1] * m[ref_pos - 1] +
@@ -341,24 +353,24 @@ piecewise_summ_figure <- function(xcoef, coef,
   lci_mm_quant <- NULL
   uci_mm_quant <- NULL
 
-  for(j in 1:q) {
+  for (j in 1:q) {
     x_ci <- xmean[j]
     # find segment containing the mean of the jth stratum
-    for(i in 1:q) {
-      if(m[i] <= x_ci & m[(i + 1)] >= x_ci) {
+    for (i in 1:q) {
+      if (m[i] <= x_ci & m[(i + 1)] >= x_ci) {
         ci_pos <- i + 1
-        }
+      }
     }
 
     y_mm_quant[j] <- coef[ci_pos - 1] * x_ci -
-                      coef[ci_pos - 1] * m[ci_pos - 1] +
-                      y_mm[ci_pos - 1]
+      coef[ci_pos - 1] * m[ci_pos - 1] +
+      y_mm[ci_pos - 1]
     lci_mm_quant[j] <- lci[ci_pos - 1] * x_ci -
-                        lci[ci_pos - 1] * m[ci_pos - 1] +
-                        lci_mm[ci_pos - 1]
+      lci[ci_pos - 1] * m[ci_pos - 1] +
+      lci_mm[ci_pos - 1]
     uci_mm_quant[j] <- uci[ci_pos - 1] * x_ci -
-                        uci[ci_pos - 1] * m[ci_pos - 1] +
-                        uci_mm[ci_pos - 1]
+      uci[ci_pos - 1] * m[ci_pos - 1] +
+      uci_mm[ci_pos - 1]
   }
 
 
@@ -372,91 +384,118 @@ piecewise_summ_figure <- function(xcoef, coef,
   if (family != "binomial") {
     # collect data
 
-  plot_data <- data.frame(x = m, y = y_mm_ref,
-                          y_lci = lci_mm_ref, y_uci = uci_mm_ref)
-  plot_data1 <- data.frame(x = xmean, y = y_mm_quant_ref,
-                            y_lci = lci_mm_quant_ref,
-                            y_uci = uci_mm_quant_ref)
-  plot_data2 <- data.frame(x = ref, y = 0)
+    plot_data <- data.frame(
+      x = m, y = y_mm_ref,
+      y_lci = lci_mm_ref, y_uci = uci_mm_ref
+    )
+    plot_data1 <- data.frame(
+      x = xmean, y = y_mm_quant_ref,
+      y_lci = lci_mm_quant_ref,
+      y_uci = uci_mm_quant_ref
+    )
+    plot_data2 <- data.frame(x = ref, y = 0)
 
-  #set figure
+    # set figure
 
-if(ci_fig == "point") {
-  figure <- ggplot(plot_data, aes(x)) +
-    geom_hline(aes(yintercept = 0), colour = "grey") +
-    geom_line(aes(x = x, y = y), colour = "black") +
-    geom_errorbar(aes(x = x, ymin = y_lci, ymax = y_uci), data = plot_data1,
-                  color = "grey", width = 0.025) +
-    geom_point(aes(x = x, y = y), data = plot_data1,
-               colour = "black", size = 2) +
-    geom_point(aes(x = x, y = y), data = plot_data2,
-               colour = "red", size = 2)
-
-}else{
-
-    figure <- ggplot(plot_data, aes(x)) +
-    geom_hline(aes(yintercept = 0), colour = "grey") +
-    geom_ribbon(aes(ymin = y_lci, ymax = y_uci), alpha = 0.15) +
-    geom_line(aes(x = x, y = y), colour = "black")
-
-}
-
-  figure <- figure + theme_bw() + labs(x = pref_x,
-  y = bquote(.(pref_y)~" ["~.(pref_x_ref)["ref"]~" = "~.(round(ref, 2))~"]")) +
-    theme(axis.title.x = element_text(vjust = 0.5, size = 20),
-          axis.title.y = element_text(vjust = 0.5, size = 20),
-          axis.text.x = element_text(size = 18),
-          axis.text.y = element_text(size = 18)) +
-    theme(panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank())
-
-  if(!is.null(breaks)) {
-    figure <- figure + scale_y_continuous(breaks = breaks)
+    if (ci_fig == "point") {
+      figure <- ggplot(plot_data, aes(x)) +
+        geom_hline(aes(yintercept = 0), colour = "grey") +
+        geom_line(aes(x = x, y = y), colour = "black") +
+        geom_errorbar(aes(x = x, ymin = y_lci, ymax = y_uci),
+          data = plot_data1,
+          color = "grey", width = 0.025
+        ) +
+        geom_point(aes(x = x, y = y),
+          data = plot_data1,
+          colour = "black", size = 2
+        ) +
+        geom_point(aes(x = x, y = y),
+          data = plot_data2,
+          colour = "red", size = 2
+        )
+    } else {
+      figure <- ggplot(plot_data, aes(x)) +
+        geom_hline(aes(yintercept = 0), colour = "grey") +
+        geom_ribbon(aes(ymin = y_lci, ymax = y_uci), alpha = 0.15) +
+        geom_line(aes(x = x, y = y), colour = "black")
     }
-}else{
-  # collect data
-  pref_y <- paste0("Odds ratio of ", pref_y)
-  plot_data <- data.frame(x = m, y = exp(y_mm_ref), y_lci = exp(lci_mm_ref),
-                          y_uci = exp(uci_mm_ref))
-  plot_data1 <- data.frame(x = xmean, y = exp(y_mm_quant_ref),
-                            y_lci = exp(lci_mm_quant_ref),
-                            y_uci = exp(uci_mm_quant_ref))
-  plot_data2 <- data.frame(x = ref, y = 1)
+
+    figure <- figure + theme_bw() + labs(
+      x = pref_x,
+      y = bquote(.(pref_y) ~ " [" ~ .(pref_x_ref)["ref"] ~ " = " ~ .(round(ref, 2)) ~ "]")
+    ) +
+      theme(
+        axis.title.x = element_text(vjust = 0.5, size = 20),
+        axis.title.y = element_text(vjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 18),
+        axis.text.y = element_text(size = 18)
+      ) +
+      theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+      )
+
+    if (!is.null(breaks)) {
+      figure <- figure + scale_y_continuous(breaks = breaks)
+    }
+  } else {
+    # collect data
+    pref_y <- paste0("Odds ratio of ", pref_y)
+    plot_data <- data.frame(
+      x = m, y = exp(y_mm_ref), y_lci = exp(lci_mm_ref),
+      y_uci = exp(uci_mm_ref)
+    )
+    plot_data1 <- data.frame(
+      x = xmean, y = exp(y_mm_quant_ref),
+      y_lci = exp(lci_mm_quant_ref),
+      y_uci = exp(uci_mm_quant_ref)
+    )
+    plot_data2 <- data.frame(x = ref, y = 1)
 
 
-  if(ci_fig == "point") {
-    figure <- ggplot(plot_data, aes(x)) +
-      geom_hline(aes(yintercept = 1), colour = "grey") +
-      geom_line(aes(x = x, y = y), colour = "black") +
-      geom_errorbar(aes(x = x, ymin = y_lci, ymax = y_uci), data = plot_data1,
-                    color = "grey", width = 0.025) +
-      geom_point(aes(x = x, y = y), data = plot_data1, colour = "black",
-                 size = 2) +
-      geom_point(aes(x = x, y = y), data = plot_data2, colour = "red",
-                 size = 2)
+    if (ci_fig == "point") {
+      figure <- ggplot(plot_data, aes(x)) +
+        geom_hline(aes(yintercept = 1), colour = "grey") +
+        geom_line(aes(x = x, y = y), colour = "black") +
+        geom_errorbar(aes(x = x, ymin = y_lci, ymax = y_uci),
+          data = plot_data1,
+          color = "grey", width = 0.025
+        ) +
+        geom_point(aes(x = x, y = y),
+          data = plot_data1, colour = "black",
+          size = 2
+        ) +
+        geom_point(aes(x = x, y = y),
+          data = plot_data2, colour = "red",
+          size = 2
+        )
+    } else {
+      figure <- ggplot(plot_data, aes(x)) +
+        geom_hline(aes(yintercept = 1), colour = "grey") +
+        geom_ribbon(aes(ymin = y_lci, ymax = y_uci), alpha = 0.15) +
+        geom_line(aes(x = x, y = y), colour = "black")
+    }
 
-  }else{
-    figure <- ggplot(plot_data, aes(x)) +
-      geom_hline(aes(yintercept = 1), colour = "grey") +
-      geom_ribbon(aes(ymin = y_lci, ymax = y_uci), alpha = 0.15) +
-      geom_line(aes(x = x, y = y), colour = "black")
+    figure <- figure + theme_bw() + labs(
+      x = pref_x,
+      y = bquote(.(pref_y) ~ " [" ~ .(pref_x_ref)["ref"] ~ " =" ~ .(round(ref, 2)) ~ "]")
+    ) +
+      theme(
+        axis.title.x = element_text(vjust = 0.5, size = 20),
+        axis.title.y = element_text(vjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 18),
+        axis.text.y = element_text(size = 18)
+      ) +
+      theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+      )
+
+    if (!is.null(breaks)) {
+      figure <- figure + scale_y_continuous(trans = "exp", breaks = breaks)
+    }
   }
-
-  figure <- figure + theme_bw() + labs(x = pref_x,
-y = bquote(.(pref_y)~" ["~.(pref_x_ref)["ref"]~" ="~.(round(ref, 2))~"]")) +
-    theme(axis.title.x = element_text(vjust = 0.5, size = 20),
-          axis.title.y = element_text(vjust = 0.5, size = 20),
-          axis.text.x = element_text(size = 18),
-          axis.text.y = element_text(size = 18)) +
-    theme(panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank())
-
-  if(!is.null(breaks)) {
-    figure <- figure + scale_y_continuous(trans = "exp", breaks = breaks)
-    }
-
-}
-    return(figure)
+  return(figure)
 }
 
 
@@ -473,19 +512,23 @@ summary.piecewise_summ_mr <- function(object, ...) {
   coefficients <- as.data.frame(object$lace)
   p_tests <- as.data.frame(object$p_tests)
   p_heterogeneity <- as.data.frame(object$p_heterogeneity)
-  if(is.null(object$figure)) {
-    summ <- list(model = model,
-    coefficients = coefficients,
-    p_tests = p_tests,
-    p_heterogeneity = p_heterogeneity)
-    }
-  if(!is.null(object$figure)) {
-    summ <- list(model = model,
-    coefficients = coefficients,
-    p_tests = p_tests,
-    p_heterogeneity = p_heterogeneity,
-    figure = object$figure)
-    }
+  if (is.null(object$figure)) {
+    summ <- list(
+      model = model,
+      coefficients = coefficients,
+      p_tests = p_tests,
+      p_heterogeneity = p_heterogeneity
+    )
+  }
+  if (!is.null(object$figure)) {
+    summ <- list(
+      model = model,
+      coefficients = coefficients,
+      p_tests = p_tests,
+      p_heterogeneity = p_heterogeneity,
+      figure = object$figure
+    )
+  }
   class(summ) <- "summary.piecewise_mr"
   return(summ)
 }
@@ -503,8 +546,10 @@ print.summary.piecewise_summ_mr <- function(x, ...) {
   cat("\n Quantiles: ", as.character(x$model$q), "; Number of bootstrap
       replications: ", as.character(x$model$nboot), sep = "")
   cat("\n\nLACE:\n")
-  names(x$coefficients) <- c("Estimate", "Std. Error", "95%CI Lower",
-                             "95%CI Upper", "p.value")
+  names(x$coefficients) <- c(
+    "Estimate", "Std. Error", "95%CI Lower",
+    "95%CI Upper", "p.value"
+  )
   printCoefmat(x$coefficients, P.values = TRUE, has.Pvalue = TRUE)
   cat("\nNon-linearity tests")
   cat("\nQuadratic p-value:", signif(x$p_tests$quad, digits = 3))
@@ -513,7 +558,7 @@ print.summary.piecewise_summ_mr <- function(x, ...) {
   cat("\nCochran Q p-value:", signif(x$p_heterogeneity$Q, digits = 3))
   cat("\nTrend p-value:", signif(x$p_heterogeneity$trend, digits = 3))
   cat("\n")
-  if(!is.null(x$figure)) {
+  if (!is.null(x$figure)) {
     plot(x$figure)
-    }
+  }
 }

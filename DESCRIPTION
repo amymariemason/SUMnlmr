@@ -1,5 +1,5 @@
 Package: SUMnlmr
-Title: Non-Linear Mendenlian Randomization On Partially Summarized Data
+Title: Non-Linear Mendelian Randomization On Partially Summarized Data
 Version: 0.0.0.9000
 Authors@R: 
     c( person(given = "Amy",
@@ -19,7 +19,7 @@ Authors@R:
             family = "Arnold",
            role = "aut",
            email= "")  )
-Description: Runs non-linear MR calculations on pre-summarized data.
+Description: Runs non-linear MR calculations on partly-summarized data.
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true

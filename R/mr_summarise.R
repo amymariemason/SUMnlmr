@@ -28,40 +28,41 @@
 #' @importFrom stats quantile
 #' @export
 create_nlmr_summary <- function(y,
-                              x,
-                              g,
-                              covar=NULL,
-                              family= "gaussian",
-                              q
-                              ){
+                                x,
+                                g,
+                                covar = NULL,
+                                family = "gaussian",
+                                q) {
 
   # calculate the iv-free association
-    ivf<- iv_free(y = y, x = x, g = g,
-                covar=covar, q = q , family = family)
+  ivf <- iv_free(
+    y = y, x = x, g = g,
+    covar = covar, q = q, family = family
+  )
 
   x0q <- ivf$x0q
-  quant<-q
+  quant <- q
 
   # this calculates the association for each quanta
-  by   <-rep(NA, quant)
-  byse  <-rep(NA, quant)
-  bx  <-rep(NA, quant)
-  bxse <-rep(NA, quant)
-  x0mean  <-rep(NA, quant)
-  xmean  <-rep(NA, quant)
-  xmax  <-rep(NA, quant)
-  xmin  <-rep(NA, quant)
+  by <- rep(NA, quant)
+  byse <- rep(NA, quant)
+  bx <- rep(NA, quant)
+  bxse <- rep(NA, quant)
+  x0mean <- rep(NA, quant)
+  xmean <- rep(NA, quant)
+  xmax <- rep(NA, quant)
+  xmin <- rep(NA, quant)
 
   # find upper and lower cutoffs for each quartile of x NOT IVFREE
-  quantiles_x <- quantile(x, probs= seq(0,1, 1/quant))
-  x_quantiles <- cut(x, quantiles_x, include.lowest=T)
+  quantiles_x <- quantile(x, probs = seq(0, 1, 1 / quant))
+  x_quantiles <- cut(x, quantiles_x, include.lowest = T)
   x_quantiles <- as.numeric(x_quantiles)
 
   for (j in 1:quant) {
     # describe the quantiles of original data
-    xmin[j] = quantile(x[x_quantiles == j],0.000001)
-    xmax[j] = quantile(x[x_quantiles == j],0.999999)
-    xmean[j] <- mean(x[x_quantiles==j])
+    xmin[j] <- quantile(x[x_quantiles == j], 0.000001)
+    xmax[j] <- quantile(x[x_quantiles == j], 0.999999)
+    xmean[j] <- mean(x[x_quantiles == j])
     # model the y coefficient
     if (family == "gaussian") {
       if (is.null(covar)) {
@@ -75,30 +76,31 @@ create_nlmr_summary <- function(y,
         model <- glm(y[x0q == j] ~ g[x0q == j], family = "binomial")
       } else {
         model <- glm(y[x0q == j] ~ g[x0q == j] + covar[x0q == j, , drop = F],
-                     family = "binomial")
+          family = "binomial"
+        )
       }
     }
-    if (is.na(model$coef[2])){
+    if (is.na(model$coef[2])) {
       stop("the regression coefficient of the outcome on the instrument
-           in one of the quantiles is missing")}
+           in one of the quantiles is missing")
+    }
     by[j] <- model$coef[2]
     byse[j] <- summary(model)$coef[2, 2]
-    model<-NULL
+    model <- NULL
     # model the x coefficient
     if (is.null(covar)) {
       model2 <- lm(x[x0q == j] ~ g[x0q == j])
     } else {
       model2 <- lm(x[x0q == j] ~ g[x0q == j] + covar[x0q == j, , drop = F])
     }
-    bx[j]   = model2$coef[2]
-    bxse[j] = summary(model2)$coef[2,2]
-    model2<-NULL
-    x0mean[j] = mean(x[x0q == j])
-
+    bx[j] <- model2$coef[2]
+    bxse[j] <- summary(model2)$coef[2, 2]
+    model2 <- NULL
+    x0mean[j] <- mean(x[x0q == j])
   }
   # output data
-  output <- data.frame(bx, by, bxse, byse, x0mean,xmean, xmin, xmax)
-  names(output)<-c("bx", "by", "bxse", "byse", "x0mean", "xmean","xmin","xmax")
+  output <- data.frame(bx, by, bxse, byse, x0mean, xmean, xmin, xmax)
+  names(output) <- c("bx", "by", "bxse", "byse", "x0mean", "xmean", "xmin", "xmax")
   # print(list(summary = head(output)))
   invisible(list(summary = output))
 }
@@ -137,49 +139,48 @@ create_nlmr_summary <- function(y,
 #' @author Amy Mason
 #' @import stats
 #' @export
-create_ind_data <- function(N, gpar=0.3, par1=1, par2=0,
-                        beta0=0, beta1 = 3, beta2 = 7, confound = 0.8){
+create_ind_data <- function(N, gpar = 0.3, par1 = 1, par2 = 0,
+                            beta0 = 0, beta1 = 3, beta2 = 7, confound = 0.8) {
   # generate G
-  data <- as.data.frame(rbinom(N,2,gpar))
+  data <- as.data.frame(rbinom(N, 2, gpar))
   names(data) <- c("g")
 
   # generate Unknown confound
-  data$u <- runif(N,0,1)
+  data$u <- runif(N, 0, 1)
 
   # generate error terms
-  data$errorX <- rexp(N,1)
-  data$errorY <- rnorm(N,0,1)
+  data$errorX <- rexp(N, 1)
+  data$errorY <- rnorm(N, 0, 1)
 
   # build X
-  data$X<-2 + 0.25*data$g + data$u + data$errorX
+  data$X <- 2 + 0.25 * data$g + data$u + data$errorX
 
   # generate various Y with different exposure-outcome results
-  data$linear.Y <-      beta0+beta1*data$X + confound*data$u + data$errorY
-  data$quadratic.Y <-   beta0+beta2*(data$X)^2 + beta1*data$X + confound*data$u +
+  data$linear.Y <- beta0 + beta1 * data$X + confound * data$u + data$errorY
+  data$quadratic.Y <- beta0 + beta2 * (data$X)^2 + beta1 * data$X + confound * data$u +
     data$errorY
-  data$sqrt.Y <-        beta0+beta1*sqrt(data$X) + confound*data$u + data$errorY
-  data$log.Y <-         beta0+beta1*log(data$X) + confound*data$u + data$errorY
-  data$threshold.Y <-   ifelse(data$X > beta2, beta0+beta1*data$X, beta0)+
-    confound*data$u + data$errorY
-  if(par1==par2){
-    if(par1==0){
-      data$fracpoly.Y <- beta0+beta1*log(data$X)+beta2*log(data$X)*log(data$X) +
-        confound*data$u + data$errorY
-    }else{
-      data$fracpoly.Y <- beta0+beta1*data$X^par1+beta2*log(data$X)*data$X^par1 +
-        confound*data$u + data$errorY
+  data$sqrt.Y <- beta0 + beta1 * sqrt(data$X) + confound * data$u + data$errorY
+  data$log.Y <- beta0 + beta1 * log(data$X) + confound * data$u + data$errorY
+  data$threshold.Y <- ifelse(data$X > beta2, beta0 + beta1 * data$X, beta0) +
+    confound * data$u + data$errorY
+  if (par1 == par2) {
+    if (par1 == 0) {
+      data$fracpoly.Y <- beta0 + beta1 * log(data$X) + beta2 * log(data$X) * log(data$X) +
+        confound * data$u + data$errorY
+    } else {
+      data$fracpoly.Y <- beta0 + beta1 * data$X^par1 + beta2 * log(data$X) * data$X^par1 +
+        confound * data$u + data$errorY
     }
-  }else{
-    if(par1==0){
-      data$fracpoly.Y <- beta0+beta1*log(data$X) + beta2*data$X^par2 +
-        confound*data$u + data$errorY
-
-    }else if(par2==0){
-      data$fracpoly.Y <-beta0+beta1*data$X^par1 + beta2*log(data$X) +
-        confound*data$u + data$errorY
-    }else{
-      data$fracpoly.Y <- beta0+beta1*data$X^par1 + beta2*data$X^par2 +
-        confound*data$u + data$errorY
+  } else {
+    if (par1 == 0) {
+      data$fracpoly.Y <- beta0 + beta1 * log(data$X) + beta2 * data$X^par2 +
+        confound * data$u + data$errorY
+    } else if (par2 == 0) {
+      data$fracpoly.Y <- beta0 + beta1 * data$X^par1 + beta2 * log(data$X) +
+        confound * data$u + data$errorY
+    } else {
+      data$fracpoly.Y <- beta0 + beta1 * data$X^par1 + beta2 * data$X^par2 +
+        confound * data$u + data$errorY
     }
   }
   return(data)
@@ -198,19 +199,19 @@ create_ind_data <- function(N, gpar=0.3, par1=1, par2=0,
 #' @import stats
 #' @export
 
-create_summary_data<-function(Ytype, q = 10, keep = FALSE, ...) {
+create_summary_data <- function(Ytype, q = 10, keep = FALSE, ...) {
   # create Ytype_name to generate the appropriate function type
-  if(Ytype == "linear"){
+  if (Ytype == "linear") {
     Ytype_name <- "linear.Y"
-  } else if (Ytype == "quad"){
+  } else if (Ytype == "quad") {
     Ytype_name <- "quadratic.Y"
-  } else if(Ytype == "sqrt"){
+  } else if (Ytype == "sqrt") {
     Ytype_name <- "sqrt.Y"
-  } else if(Ytype == "log"){
+  } else if (Ytype == "log") {
     Ytype_name <- "log.Y"
-  } else if(Ytype == "threshold"){
+  } else if (Ytype == "threshold") {
     Ytype_name <- "threshold.Y"
-  } else if(Ytype == "fracpoly"){
+  } else if (Ytype == "fracpoly") {
     Ytype_name <- "fracpoly.Y"
   } else {
     stop("model type not supported")
@@ -218,25 +219,27 @@ create_summary_data<-function(Ytype, q = 10, keep = FALSE, ...) {
 
   # create the data
 
-  data<-create_ind_data(...)
-  y=data[,Ytype_name]
-  g=data$g
-  x=data$X
-  summ<-create_nlmr_summary(y=y,
-                            x=x,
-                            g=g,
-                            q=q,
-                            family="Gaussian",
-                            ...)
-  summ_data<-summ$summary
+  data <- create_ind_data(...)
+  y <- data[, Ytype_name]
+  g <- data$g
+  x <- data$X
+  summ <- create_nlmr_summary(
+    y = y,
+    x = x,
+    g = g,
+    q = q,
+    family = "Gaussian",
+    ...
+  )
+  summ_data <- summ$summary
 
   # keep entire set if keep variable set to TRUE
-  if(keep == TRUE){
-    invisible(list(summary = summ_data,
-                   alldata = data
+  if (keep == TRUE) {
+    invisible(list(
+      summary = summ_data,
+      alldata = data
     ))
-  }else{
-    invisible(list(summary = summ_data
-    ))
+  } else {
+    invisible(list(summary = summ_data))
   }
 }
