@@ -80,6 +80,7 @@ summ_data<-create_nlmr_summary(y = test_data$quadratic.Y,
                                 g = test_data$g,
                                 covar = NULL,
                                 family = "gaussian",
+                                controlsonly=FALSE,
                                 q = 10)
 
 head(summ_data)
@@ -131,7 +132,7 @@ summary(model)
 ```
 This also produces a graph of the fit with 95% confidence intervals.
 This is a ggplot object and can be adjusted with ggplot commands
-```{r example 5}
+```{r example5}
 library(ggplot2)
 f <- function(x) (x + 2*x^2 - mean(summ_data$summary$xmean) -
                     2*mean(summ_data$summary$xmean)^2 )
@@ -152,7 +153,7 @@ and
 * Q: Cochran Q heterogeneity test
 * trend: trend test
 
-``` {r example 6}
+``` {r example6}
 model$p_tests
 
 model$p_heterogeneity
@@ -162,9 +163,9 @@ model$p_heterogeneity
 
 We can instead fit a piecewise linear model to the same summarised data
 
-```{r pl example}
+```{r plexample}
 
-model2 <-with(summ_data$summary, piecewise_summ_mr(by, bx, byse, bxse, x0mean, xmean, xmin,xmax, 
+model2 <-with(summ_data$summary, piecewise_summ_mr(by, bx, byse, bxse, xmean, xmin,xmax, 
                   ci="bootstrap_se",
                   nboot=1000, 
                   fig=TRUE,
@@ -211,7 +212,7 @@ model3<- with(summ_bin$summary,frac_poly_summ_mr(bx=bx,
                   bxse=bxse, 
                   byse=byse, 
                   xmean=xmean,
-                  family="gaussian",
+                  family="binomial",
                   fig=TRUE)
 )
 
@@ -243,7 +244,7 @@ summary(model4)
 
 
 # fit piecewise linear model
-model5 <-with(LDL_CAD_covar,piecewise_summ_mr(by, bx, byse, bxse, x0mean, xmean, xmin,xmax, 
+model5 <-with(LDL_CAD_covar,piecewise_summ_mr(by, bx, byse, bxse, xmean, xmin,xmax, 
                   ci="bootstrap_se",
                   nboot=1000, 
                   fig=TRUE,

@@ -1,3 +1,102 @@
+#Several of the functions here are taken from James Staley's nlmr package, to avoid
+#need to install that package in order to create summarised data
+# https://github.com/jrs95/nlmr for original functions
+
+#' Hamardman product
+#'
+#' hamardman.prod computes the Hamardman product of a vector of regression
+#' coefficients and a matrix of covariates.
+#' @param coef vector of regression coefficients.
+#' @param covar a matrix of covariates
+#' @author James R Staley <js16174@bristol.ac.uk>
+#' @export
+hamardman.prod <- function(coef, covar){
+  if(length(coef)!=ncol(covar)) stop("the number of coefficients is greater than
+                                     the number of covariates")
+  results <- reprow(coef,nrow(covar))*covar
+  return(results)
+}
+
+#' IV-free exposure
+#'
+#' iv_free computes the IV-free exposure.
+#' @param y vector of outcome values.
+#' @param x vector of exposure values.
+#' @param g the instrumental variable.
+#' @param q the number of quantiles the exposure distribution is to be split
+#' into. The default is deciles (i.e. 10
+#' quantiles).
+#' @param covar a matrix of covariates.
+#' @param family a description of the error distribution and link function to be
+#'  used in the model (either "gaussian" or "binomial" can be specified).
+#' @param controlsonly whether to estimate the gx association in all people,
+#' or in controls only. This is set to TRUE by default, but has no effect if
+#' family is gaussian.
+#' @return \item{xcoef}{the association between the exposure and the instrument}
+#' @return \item{x0}{the IV-free exposure.}
+#' @return \item{x0q}{the quantiles of x0.}
+#' @author Amy Mason <am2609@medschl.cam.ac.uk> based on similar function in nlmr
+#' by James R Staley
+iv_free <- function(y,
+                    x,
+                    g,
+                    covar=NULL,
+                    q=10,
+                    family="gaussian",
+                    controlsonly=T){
+  if(family=="gaussian"){
+    if(!is.null(covar)){
+      model <- lm(x~g+covar)
+    }else{
+        model <- lm(x~g)
+    }
+    if(any(is.na(model$coef))) stop("there are missing regression coefficients
+                                    in the regression of the exposure on the
+                                    instrument and covariates")
+    x0 <- resid(model)
+  }
+  if(family=="binomial"){
+    if (controlsonly==T){
+      if(!is.null(covar)){
+        model <- lm(x[y == 0] ~ g[y == 0] + covar[y == 0, , drop = F])
+        if(any(is.na(model$coef))) stop("there are missing regression coefficients
+                                    in the regression of the exposure on the
+                                    instrument and covariates in the controls")
+        x0 <- x - (model$coef[1] + model$coef[2]*g +
+                rowSums(hamardman.prod(model$coef[3:length(model$coef)],covar)))
+      }else{
+        model <- lm(x[y == 0] ~ g[y == 0])
+        if(any(is.na(model$coef))) stop("there are missing regression
+                                          coefficients in the regression of the
+                                          exposure on the instrument and
+                                        covariates in the controls")
+      x0 <- x - (model$coef[1] + model$coef[2]*g)
+      }
+    }else{
+      if(!is.null(covar)){
+        model <- lm(x ~ g + covar)
+        if(any(is.na(model$coef))) stop("there are missing regression coefficients
+                                    in the regression of the exposure on the
+                                    instrument and covariates in the controls")
+        x0 <- x - (model$coef[1] + model$coef[2]*g +
+                   rowSums(hamardman.prod(model$coef[3:length(model$coef)],covar)))
+      }else{
+        model <- lm(x ~ g)
+        if(any(is.na(model$coef))) stop("there are missing regression
+                                          coefficients in the regression of the
+                                          exposure on the instrument and
+                                        covariates in the controls")
+        x0 <- x - (model$coef[1] + model$coef[2]*g)
+      }
+    }
+  }
+  xcoef <- model$coef[2]
+  quantiles <- quantile(x0, probs=seq(0,1,1/q))
+  x0q <- cut(x0, quantiles, include.lowest=T, labels=F)
+  results <- list(xcoef=xcoef, x0=x0, x0q=x0q)
+  return(results)
+}
+
 #' Repeat rows
 #'
 #' This function creates a matrix of a repeated vector where each row is the

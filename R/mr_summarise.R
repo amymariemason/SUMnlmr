@@ -11,6 +11,9 @@
 #' For piecewise_mr this can be a character string naming either the gaussian
 #' (i.e. "gaussian" for continuous data) or binomial (i.e. "binomial" for
 #' binary data) family function.
+#' @param controlonly whether to estimate the gx association in all people,
+#' or in controls only. This is set to TRUE as defau.
+#' It has no effect if family is set to "gaussian"
 #' @param q the number of quantiles the exposure distribution is to be split
 #' into. Within each quantile a causal effect will be fitted, known as a
 #' localised average causal effect (LACE). The default is deciles (i.e. 10
@@ -24,7 +27,6 @@
 #' @author Amy Mason, leaning heavily on work by James Statley and Matt Arnold
 #' @import ggplot2
 #' @import matrixStats
-#' @importFrom nlmr iv_free
 #' @importFrom stats quantile
 #' @export
 create_nlmr_summary <- function(y,
@@ -32,13 +34,18 @@ create_nlmr_summary <- function(y,
                                 g,
                                 covar = NULL,
                                 family = "gaussian",
+                                controlsonly=TRUE,
                                 q) {
 
   # calculate the iv-free association
+  if (family=="binomial" |family=="gaussian") {
   ivf <- iv_free(
     y = y, x = x, g = g,
-    covar = covar, q = q, family = family
+    covar = covar, q = q, family = family, controlsonly=controlsonly
   )
+  } else {
+    stop("family must be gaussian or binomial")
+  }
 
   x0q <- ivf$x0q
   quant <- q
@@ -48,33 +55,37 @@ create_nlmr_summary <- function(y,
   byse <- rep(NA, quant)
   bx <- rep(NA, quant)
   bxse <- rep(NA, quant)
-  x0mean <- rep(NA, quant)
   xmean <- rep(NA, quant)
   xmax <- rep(NA, quant)
   xmin <- rep(NA, quant)
 
-  # find upper and lower cutoffs for each quartile of x NOT IVFREE
-  quantiles_x <- quantile(x, probs = seq(0, 1, 1 / quant))
-  x_quantiles <- cut(x, quantiles_x, include.lowest = T)
-  x_quantiles <- as.numeric(x_quantiles)
+#use the ivfree quantiles
 
   for (j in 1:quant) {
     # describe the quantiles of original data
-    xmin[j] <- quantile(x[x_quantiles == j], 0.000001)
-    xmax[j] <- quantile(x[x_quantiles == j], 0.999999)
-    xmean[j] <- mean(x[x_quantiles == j])
+    if (j==1){
+      xmin[j] <- quantile(x[x0q == j], 0.2)
+    }else{
+      xmin[j] <- quantile(x[x0q == j], 0.1)
+    }
+    if (j==quant){
+      xmax[j] <- quantile(x[x0q == j], 0.8)
+    }else{
+      xmax[j] <- quantile(x[x0q == j], 0.9)
+    }
+    xmean[j] <- mean(x[x0q == j])
     # model the y coefficient
     if (family == "gaussian") {
       if (is.null(covar)) {
         model <- lm(y[x0q == j] ~ g[x0q == j])
-      } else {
+      }else{
         model <- lm(y[x0q == j] ~ g[x0q == j] + covar[x0q == j, , drop = F])
       }
     }
     if (family == "binomial") {
       if (is.null(covar)) {
         model <- glm(y[x0q == j] ~ g[x0q == j], family = "binomial")
-      } else {
+      }else{
         model <- glm(y[x0q == j] ~ g[x0q == j] + covar[x0q == j, , drop = F],
           family = "binomial"
         )
@@ -96,11 +107,10 @@ create_nlmr_summary <- function(y,
     bx[j] <- model2$coef[2]
     bxse[j] <- summary(model2)$coef[2, 2]
     model2 <- NULL
-    x0mean[j] <- mean(x[x0q == j])
   }
   # output data
-  output <- data.frame(bx, by, bxse, byse, x0mean, xmean, xmin, xmax)
-  names(output) <- c("bx", "by", "bxse", "byse", "x0mean", "xmean", "xmin", "xmax")
+  output <- data.frame(bx, by, bxse, byse, xmean, xmin, xmax)
+  names(output) <- c("bx", "by", "bxse", "byse", "xmean", "xmin", "xmax")
   # print(list(summary = head(output)))
   invisible(list(summary = output))
 }
@@ -243,3 +253,4 @@ create_summary_data <- function(Ytype, q = 10, keep = FALSE, ...) {
     invisible(list(summary = summ_data))
   }
 }
+

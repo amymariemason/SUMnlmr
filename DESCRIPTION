@@ -23,6 +23,7 @@ Description: Runs non-linear MR calculations on partly-summarized data.
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
+Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Depends: R (>= 3.1.0)
@@ -32,8 +33,7 @@ Imports:
   ggplot2,
   metafor,
   matrixStats,
-  utils,
-  nlmr,
+  utils
 Suggests: 
     testthat,
     knitr,

@@ -84,7 +84,7 @@ if (getRversion() >= "2.15.1") {
 #' The first column is the p-value of the Cochran Q heterogeneity test (Q);
 #' the second column is the p-value from the trend test (trend).
 #' @return figure ggplot command to produce a figure.
-#' @author Stephen Burgess <sb452@medschl.cam.ac.uk>, leading heavily on
+#' @author Stephen Burgess <sb452@medschl.cam.ac.uk>, leaning heavily on
 #' James R Staley <js16174@bristol.ac.uk>
 #' @import ggplot2
 #' @importFrom matrixStats rowQuantiles
@@ -97,7 +97,7 @@ if (getRversion() >= "2.15.1") {
 ## log(plot_data$x) in the second from last term
 
 frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = 1,
-                              powers = c(0, -3, -2, -1.5, -1, -0.5, 1, 2),
+                              powers = c(0, -2, -1.5, -1, -0.5, 1, 2),
                               pd = 0.05, ci = "model_se", nboot = 100,
                               fig = FALSE, family = "binomial", offset = 0,
                               pref_x = "x", pref_y = "y", ref = NA,
@@ -142,15 +142,25 @@ frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = 1,
       x1 <- (p1 + 1) * xmean^p1
     }
     p[j] <- p1
-    ML[j] <- summary(rma(frac_coef / xcoef ~ -1 + x1,
-      vi = (frac_se / xcoef)^2,
-      method = method
-    ))$fit.stats[1, 1]
+    cc <- try(rma(frac_coef / xcoef ~ -1 + x1,
+                  vi = (frac_se / xcoef)^2,
+                  method = method
+    ), silent = TRUE)
+    if (methods::is(cc, "try-error") == T) {
+      ML[j] <- NA
+    }
+    if (methods::is(cc, "try-error") == F) {
+      ML[j] <- summary(rma(frac_coef / xcoef ~ -1 + x1,
+                           vi = (frac_se / xcoef)^2,
+                           method = method
+      ))$fit.stats[1, 1]
+    }
+
     j <- j + 1
   }
   fits <- data.frame(p, ML)
   fits$max <- 0
-  fits$max[fits$ML == max(fits$ML)] <- 1
+  fits$max[fits$ML == max(fits$ML, na.rm = T)] <- 1
   p_ML <- fits$p[fits$max == 1]
 
   ##### Best-fitting fractional polynomial of degree 2 #####
@@ -194,11 +204,8 @@ frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = 1,
           ML[j] <- summary(rma(frac_coef / xcoef ~ -1 + x1 + x2,
             vi = (frac_se / xcoef)^2,
             method = method
-          ))$fit.stats[
-            1,
-            1
-          ]
-        }
+          ))$fit.stats[1, 1]
+          }
         j <- j + 1
       }
       powers2 <- powers2[-1]
@@ -547,6 +554,7 @@ frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = 1,
             plot_data$lci <- plot_data$yest - 1.96 * plot_data$yse
             plot_data$uci <- plot_data$yest + 1.96 * plot_data$yse
           } else {
+
             boot <- plot_data$x^(p1_ML + 1) %*% t(frac_coef_boot[, 1]) +
               log(plot_data$x) %*% t(frac_coef_boot[, 2]) -
               reprow(ref^(p1_ML + 1) %*% t(frac_coef_boot[, 1]) +
@@ -657,10 +665,10 @@ frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = 1,
           theme_bw() +
           labs(x = pref_x, y = pref_y) +
           theme(
-            axis.title.x = element_text(vjust = 0.5, size = 20),
-            axis.title.y = element_text(vjust = 0.5, size = 20),
-            axis.text.x = element_text(size = 18),
-            axis.text.y = element_text(size = 18)
+            axis.title.x = element_text(vjust = 0.5, size = 16),
+            axis.title.y = element_text(vjust = 0.5, size = 16),
+            axis.text.x = element_text(size = 14),
+            axis.text.y = element_text(size = 14)
           ) +
           geom_point(aes(x = x, y = y),
             data = plot_data_1,
