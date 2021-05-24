@@ -4,7 +4,7 @@
 \alias{iv_free}
 \title{IV-free exposure}
 \usage{
-iv_free(y, x, g, covar, q, family = "gaussian")
+iv_free(y, x, g, covar = NULL, q = 10, family = "gaussian", controlsonly = T)
 }
 \arguments{
 \item{y}{vector of outcome values.}
@@ -16,12 +16,15 @@ iv_free(y, x, g, covar, q, family = "gaussian")
 \item{covar}{a matrix of covariates.}
 
 \item{q}{the number of quantiles the exposure distribution is to be split
-into. Within each quantile a causal effect will be fitted, known as a
-#localised average causal effect (LACE). The default is deciles (i.e. 10
+into. The default is deciles (i.e. 10
 quantiles).}
 
 \item{family}{a description of the error distribution and link function to be
 used in the model (either "gaussian" or "binomial" can be specified).}
+
+\item{controlsonly}{whether to estimate the gx association in all people,
+or in controls only. This is set to TRUE by default, but has no effect if
+family is gaussian.}
 }
 \value{
 \item{xcoef}{the association between the exposure and the instrument}
@@ -34,5 +37,6 @@ used in the model (either "gaussian" or "binomial" can be specified).}
 iv_free computes the IV-free exposure.
 }
 \author{
-James R Staley \href{mailto:js16174@bristol.ac.uk}{js16174@bristol.ac.uk}
+Amy Mason \href{mailto:am2609@medschl.cam.ac.uk}{am2609@medschl.cam.ac.uk} based on similar function in nlmr
+by James R Staley
 }

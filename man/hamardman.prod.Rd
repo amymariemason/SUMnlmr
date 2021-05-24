@@ -12,7 +12,8 @@ hamardman.prod(coef, covar)
 \item{covar}{a matrix of covariates}
 }
 \description{
-hamardman.prod computes the Hamardman product of a vector of regression coefficients and a matrix of covariates.
+hamardman.prod computes the Hamardman product of a vector of regression
+coefficients and a matrix of covariates.
 }
 \author{
 James R Staley \href{mailto:js16174@bristol.ac.uk}{js16174@bristol.ac.uk}

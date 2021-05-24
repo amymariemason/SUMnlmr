@@ -14,10 +14,8 @@
 #' @param bx vector of gene-exposure associations.
 #' @param byse vector of standard errors of gene-outcome associations.
 #' @param bxse vector of standard errors of gene-exposure associations.
-#' @param x0mean average value of the iv-free exposure in each stratum (or
-#' whatever summary of the exposure level in the stratum is desired).
-#' @param xmean  average value of the iv-free exposure in each stratum (or
-#' whatever summary of the exposure level in the stratum is desired).
+#' @param xmean average value of the original exposure in each iv-free strata
+#' (or whatever summary of the exposure level in the stratum is desired).
 #' @param xmin min value of the original exposure in each stratum (see note)
 #' @param xmax max value of the original exposure in each stratum (see note)
 #' @param xbreaks break points for the stratum x values (see note)
@@ -72,7 +70,6 @@ piecewise_summ_mr <- function(by,
                               bx,
                               byse,
                               bxse,
-                              x0mean,
                               xmean,
                               xmin,
                               xmax,
@@ -97,7 +94,6 @@ piecewise_summ_mr <- function(by,
     "bx is not numeric" = (is.numeric(bx) | is.integer(bx)),
     "byse is not numeric" = (is.numeric(byse) | is.integer(byse)),
     "bxse is not numeric" = (is.numeric(bxse) | is.integer(bxse)),
-    "x0mean is not numeric" = (is.numeric(x0mean) | is.integer(x0mean)),
     "xmean is not numeric" = (is.numeric(xmean) | is.integer(xmean)),
     "xmin is not numeric" = (is.numeric(xmin) | is.integer(xmin)),
     "xmax is not numeric" = (is.numeric(xmax) | is.integer(xmax)),
@@ -109,7 +105,6 @@ piecewise_summ_mr <- function(by,
     "missing bx values" = !anyNA(bx),
     "missing byse values" = !anyNA(byse),
     "missing bxse values" = !anyNA(bxse),
-    "missing x0mean values" = !anyNA(x0mean),
     "missing xmean values" = !anyNA(xmean),
     "missing xmin values" = !anyNA(xmin),
     "missing xmax values" = !anyNA(xmax),
@@ -131,13 +126,13 @@ piecewise_summ_mr <- function(by,
   p_het <- 1 - pchisq(rma(xcoef_sub, vi = (xcoef_sub_se)^2)$QE,
     df = (q - 1)
   )
-  p_het_trend <- rma.uni(xcoef_sub ~ x0mean,
+  p_het_trend <- rma.uni(xcoef_sub ~ xmean,
     vi = xcoef_sub_se^2,
     method = "DL"
   )$pval[2]
 
   ##### Non-linearity tests #####
-  p_quadratic <- rma(coef ~ x0mean, (coef_se)^2,
+  p_quadratic <- rma(coef ~ xmean, (coef_se)^2,
     method = "FE"
   )$pval[2]
   p_q <- 1 - pchisq(rma(coef, vi = (coef_se)^2)$QE, df = (q - 1))
@@ -185,7 +180,12 @@ piecewise_summ_mr <- function(by,
   # estimate range creation
 
   if (is.null(xbreaks)) {
-    quantiles <- c(min(xmin), sort(xmax))
+    quantiles<-NULL
+    quantiles[1]<-xmin[1]
+    quantiles[q+1]<-xmax[q]
+    for (j in 2:q){
+      quantiles[j]<-(xmin[j]+xmax[j-1])/2
+    }
   } else {
     quantiles <- xbreaks
   }

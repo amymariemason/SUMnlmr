@@ -16,7 +16,6 @@ score, unadjusted}
 regression}
 \item{byse}{standard error for the by term from the logistic
 regression}
-\item{x0mean}{Average residual ldl in stratum}
 \item{xmean}{Average ldl in stratum}
 \item{xmin}{Minimum ldl in stratum}
 \item{xmax}{Maximum ldl in stratum}

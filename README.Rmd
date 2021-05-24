@@ -80,7 +80,7 @@ summ_data<-create_nlmr_summary(y = test_data$quadratic.Y,
                                 g = test_data$g,
                                 covar = NULL,
                                 family = "gaussian",
-                                controlsonly=FALSE,
+                                controlsonly = FALSE,
                                 q = 10)
 
 head(summ_data)
@@ -231,7 +231,7 @@ covariates are included.
 ```{r bi2}
 
 # fit piecewise linear model
-model4 <-with(LDL_CAD, piecewise_summ_mr(by, bx, byse, bxse, x0mean, xmean, xmin,xmax, 
+model4 <-with(LDL_CAD, piecewise_summ_mr(by, bx, byse, bxse, xmean, xmin,xmax, 
                   ci="bootstrap_se",
                   nboot=1000, 
                   fig=TRUE,

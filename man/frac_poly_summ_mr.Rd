@@ -13,7 +13,7 @@ frac_poly_summ_mr(
   xmean,
   method = "FE",
   d = 1,
-  powers = c(0, -3, -2, -1.5, -1, -0.5, 1, 2),
+  powers = c(0, -2, -1.5, -1, -0.5, 1, 2),
   pd = 0.05,
   ci = "model_se",
   nboot = 100,
@@ -146,6 +146,6 @@ the function may error as several fractional polynomials provide the same
 fit.
 }
 \author{
-Stephen Burgess \href{mailto:sb452@medschl.cam.ac.uk}{sb452@medschl.cam.ac.uk}, leading heavily on
+Stephen Burgess \href{mailto:sb452@medschl.cam.ac.uk}{sb452@medschl.cam.ac.uk}, leaning heavily on
 James R Staley \href{mailto:js16174@bristol.ac.uk}{js16174@bristol.ac.uk}
 }

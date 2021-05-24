@@ -4,7 +4,15 @@
 \alias{create_nlmr_summary}
 \title{Creation of summarised mendelian randomisation local estimates}
 \usage{
-create_nlmr_summary(y, x, g, covar = NULL, family = "gaussian", q)
+create_nlmr_summary(
+  y,
+  x,
+  g,
+  covar = NULL,
+  family = "gaussian",
+  controlsonly = TRUE,
+  q
+)
 }
 \arguments{
 \item{y}{vector of outcome values.}
@@ -19,6 +27,10 @@ create_nlmr_summary(y, x, g, covar = NULL, family = "gaussian", q)
 For piecewise_mr this can be a character string naming either the gaussian
 (i.e. "gaussian" for continuous data) or binomial (i.e. "binomial" for
 binary data) family function.}
+
+\item{controlsonly}{whether to estimate the gx association in all people,
+or in controls only. This is set to TRUE as defau.
+It has no effect if family is set to "gaussian"}
 
 \item{q}{the number of quantiles the exposure distribution is to be split
 into. Within each quantile a causal effect will be fitted, known as a

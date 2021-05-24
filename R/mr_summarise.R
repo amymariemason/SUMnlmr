@@ -11,7 +11,7 @@
 #' For piecewise_mr this can be a character string naming either the gaussian
 #' (i.e. "gaussian" for continuous data) or binomial (i.e. "binomial" for
 #' binary data) family function.
-#' @param controlonly whether to estimate the gx association in all people,
+#' @param controlsonly whether to estimate the gx association in all people,
 #' or in controls only. This is set to TRUE as defau.
 #' It has no effect if family is set to "gaussian"
 #' @param q the number of quantiles the exposure distribution is to be split
