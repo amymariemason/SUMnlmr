@@ -338,6 +338,8 @@ piecewise_summ_figure <- function(xcoef, coef,
     uci[ref_pos - 1] * m[ref_pos - 1] +
     uci_mm[ref_pos - 1]
 
+
+
   lci_ref <- lci[ref_pos - 1] * ref -
     lci[ref_pos - 1] * m[ref_pos - 1] +
     lci_mm[ref_pos - 1]
