@@ -26,7 +26,7 @@
 #' @param ci the type of 95\\% confidence interval. There are four options:
 #' (i) using the model standard errors ('model_se'), (ii) using bootstrap
 #' standard errors ('bootstrap_se'), (iii) using bootstrap percentile
-#' confidence intervals ('bootstrap_per'), (iv) using Fieller's estimate for the CI.
+#' confidence intervals ('bootstrap_per')
 #' The default is the model standard errors.
 #' @param nboot the number of bootstrap replications (if required). The default
 #' is 1000 replications.
@@ -168,21 +168,6 @@ piecewise_summ_mr <- function(by,
       function(x) quantile(x, probs = 0.975)
     )
     pval <- NA
-  }
-  if (ci=="fieller") {
-    f0 = by^2 - (1.96*byse)^2
-    f1 = bx^2 - (1.96*bxse)^2
-    f2 = by*bx
-    D = f2^2 - f0*f1
-    D1<-tryCatch(sqrt(D), error = function(e) e, warning=function(w)
-      "Fieller will give infinite CI estimates
-      Defaulting to normal approximiation using model standard errors")
-    if (methods::is(cc, "try-error") == T) {
-      ci ="model_se"
-    }else{
-      lci = (f2 - sqrt(D))/f1
-      uci = (f2 + sqrt(D))/f1
-    }
   }
   if (ci == "model_se") {
     nboot <- NA

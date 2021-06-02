@@ -49,11 +49,11 @@ used in the model. This is a character string naming
 either the gaussian (i.e. "gaussian" for continuous data) or binomial
 (i.e. "binomial" for binary data) family function.}
 
-\item{ci}{the type of 95\\\% confidence interval. There are three options:
+\item{ci}{the type of 95\\\% confidence interval. There are four options:
 (i) using the model standard errors ('model_se'), (ii) using bootstrap
 standard errors ('bootstrap_se'), (iii) using bootstrap percentile
-confidence intervals ('bootstrap_per'). The default is the model standard
-errors.}
+confidence intervals ('bootstrap_per'), (iv) using Fieller's estimate for the CI.
+The default is the model standard errors.}
 
 \item{nboot}{the number of bootstrap replications (if required). The default
 is 1000 replications.}
