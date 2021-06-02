@@ -8,8 +8,8 @@ create_summary_data(
   Ytype,
   q = 10,
   keep = FALSE,
-  family = "Gaussian",
-  controlsonly = "FALSE",
+  family = "gaussian",
+  controlsonly = "TRUE",
   ...
 )
 }

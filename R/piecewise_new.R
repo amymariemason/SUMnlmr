@@ -23,11 +23,11 @@
 #'  used in the model. This is a character string naming
 #'  either the gaussian (i.e. "gaussian" for continuous data) or binomial
 #'  (i.e. "binomial" for binary data) family function.
-#' @param ci the type of 95\\% confidence interval. There are three options:
+#' @param ci the type of 95\\% confidence interval. There are four options:
 #' (i) using the model standard errors ('model_se'), (ii) using bootstrap
 #' standard errors ('bootstrap_se'), (iii) using bootstrap percentile
-#' confidence intervals ('bootstrap_per'). The default is the model standard
-#' errors.
+#' confidence intervals ('bootstrap_per'), (iv) using Fieller's estimate for the CI.
+#' The default is the model standard errors.
 #' @param nboot the number of bootstrap replications (if required). The default
 #' is 1000 replications.
 #' @param fig a logical statement as to whether the user wants the results
@@ -169,6 +169,21 @@ piecewise_summ_mr <- function(by,
     )
     pval <- NA
   }
+  if (ci=="fieller") {
+    f0 = by^2 - (1.96*byse)^2
+    f1 = bx^2 - (1.96*bxse)^2
+    f2 = by*bx
+    D = f2^2 - f0*f1
+    D1<-tryCatch(sqrt(D), error = function(e) e, warning=function(w)
+      "Fieller will give infinite CI estimates
+      Defaulting to normal approximiation using model standard errors")
+    if (methods::is(cc, "try-error") == T) {
+      ci ="model_se"
+    }else{
+      lci = (f2 - sqrt(D))/f1
+      uci = (f2 + sqrt(D))/f1
+    }
+  }
   if (ci == "model_se") {
     nboot <- NA
     se <- coef_se
@@ -176,6 +191,7 @@ piecewise_summ_mr <- function(by,
     uci <- coef + 1.96 * coef_se
     pval <- 2 * pnorm(-abs(coef / coef_se))
   }
+
 
   # estimate range creation
 
@@ -347,8 +363,8 @@ piecewise_summ_figure <- function(xcoef, coef,
   # set ref points to zero
   y_mm_ref <- y_mm - y_ref
 
-  uci_mm_ref <- uci_mm - uci_ref
-  lci_mm_ref <- lci_mm - lci_ref
+  uci_mm_ref <- pmax(uci_mm - uci_ref, lci_mm - lci_ref)
+  lci_mm_ref <- pmin(uci_mm - uci_ref, lci_mm - lci_ref)
 
   # create y-cordinates for the mean of each segment
   y_mm_quant <- NULL
