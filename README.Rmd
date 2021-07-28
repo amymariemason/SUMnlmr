@@ -101,6 +101,29 @@ summ_covar<-create_nlmr_summary(y = test_data$quadratic.Y,
 
 head(summ_covar)
 ```
+Note: Because the covariants are included as a matrix, lm cannot detect factor 
+variables and create automatic dummy variables for them. The easiest way to 
+include factor variables is to make these dummy variables by hand instead using 
+the [model.matrix](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/model.matrix.html)
+command. e.g.
+
+```{r example3b}
+
+## create a factor
+test_data$centre<- as.factor(rbinom(nrow(test_data),4, 0.5))
+
+#turn factor into binary contrasts against first factor
+dummies<- model.matrix(~centre,data=test_data)[,2:5]
+
+summ_covar2<-create_nlmr_summary(y = test_data$quadratic.Y,
+                                 x = test_data$X,
+                                 g = test_data$g,
+                                 covar = dummies,
+                                 family = "gaussian",
+                                 q = 10)
+
+head(summ_covar2)
+```
 
 These have used a single genetic variant count, but the method works identically 
 with an genetic score function for g instead. 

@@ -379,8 +379,8 @@ piecewise_summ_figure <- function(xcoef, coef,
 
   # rescale to ref point
   y_mm_quant_ref <- y_mm_quant - y_ref
-  lci_mm_quant_ref <- lci_mm_quant - lci_ref
-  uci_mm_quant_ref <- uci_mm_quant - uci_ref
+  lci_mm_quant_ref <- pmin(lci_mm_quant - lci_ref,uci_mm_quant - uci_ref)
+  uci_mm_quant_ref <- pmax(lci_mm_quant - lci_ref,uci_mm_quant - uci_ref)
 
 
   ##### Figure#####
