@@ -4,7 +4,14 @@
 \alias{create_summary_data}
 \title{generation of summary level data}
 \usage{
-create_summary_data(Ytype, q = 10, keep = FALSE, ...)
+create_summary_data(
+  Ytype,
+  q = 10,
+  keep = FALSE,
+  family = "gaussian",
+  controlsonly = "TRUE",
+  ...
+)
 }
 \arguments{
 \item{Ytype}{The relationship between X and Y; can be "linear", "quad", "sqrt", "log", "threshold" or "fracpoly"}
@@ -12,6 +19,15 @@ create_summary_data(Ytype, q = 10, keep = FALSE, ...)
 \item{q}{The number of quantiles.}
 
 \item{keep}{Whether to retain the individual level data as well as the summary data}
+
+\item{family}{a description of the error distribution and link function to be used in the model.
+For piecewise_mr this can be a character string naming either the gaussian
+(i.e. "gaussian" for continuous data) or binomial (i.e. "binomial" for
+binary data) family function.}
+
+\item{controlsonly}{whether to estimate the gx association in all people,
+or in controls only. This is set to TRUE as default.
+It has no effect if family is set to "gaussian"}
 
 \item{...}{parameters passed to mr_create_data for control of X-Y relationship}
 }

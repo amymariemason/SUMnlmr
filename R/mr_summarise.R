@@ -201,6 +201,13 @@ create_ind_data <- function(N, gpar = 0.3, par1 = 1, par2 = 0,
 #' @description create_summary_data generates semi-summarized level data
 #' @param Ytype The relationship between X and Y; can be "linear", "quad", "sqrt", "log", "threshold" or "fracpoly"
 #' @param ... parameters passed to mr_create_data for control of X-Y relationship
+#' @param family a description of the error distribution and link function to be used in the model.
+#' For piecewise_mr this can be a character string naming either the gaussian
+#' (i.e. "gaussian" for continuous data) or binomial (i.e. "binomial" for
+#' binary data) family function.
+#' @param controlsonly whether to estimate the gx association in all people,
+#' or in controls only. This is set to TRUE as default.
+#' It has no effect if family is set to "gaussian"
 #' @param q The number of quantiles.
 #' @param keep Whether to retain the individual level data as well as the summary data
 #' @return summary A data-frame containing the semi-summarised beta_X and
@@ -209,7 +216,9 @@ create_ind_data <- function(N, gpar = 0.3, par1 = 1, par2 = 0,
 #' @import stats
 #' @export
 
-create_summary_data <- function(Ytype, q = 10, keep = FALSE, ...) {
+create_summary_data <- function(Ytype, q = 10, keep = FALSE,
+                                family = "gaussian",
+                                controlsonly="TRUE", ...) {
   # create Ytype_name to generate the appropriate function type
   if (Ytype == "linear") {
     Ytype_name <- "linear.Y"
@@ -238,8 +247,8 @@ create_summary_data <- function(Ytype, q = 10, keep = FALSE, ...) {
     x = x,
     g = g,
     q = q,
-    family = "Gaussian",
-    ...
+    family = family,
+    controlsonly=controlsonly
   )
   summ_data <- summ$summary
 
