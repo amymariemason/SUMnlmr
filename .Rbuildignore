@@ -2,3 +2,6 @@
 ^\.Rproj\.user$
 ^SUMnlmr\.Rproj$
 ^README\.Rmd$
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.github$
