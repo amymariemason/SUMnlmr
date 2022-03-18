@@ -5,7 +5,7 @@
 #'
 #' @param y vector of outcome values.
 #' @param x vector of exposure values.
-#' @param g the instrumental variable.
+#' @param g matrix of the instrumental variables.
 #' @param covar a matrix of covariates.
 #' @param family a description of the error distribution and link function to be used in the model.
 #' For piecewise_mr this can be a character string naming either the gaussian
@@ -77,16 +77,16 @@ create_nlmr_summary <- function(y,
     # model the y coefficient
     if (family == "gaussian") {
       if (is.null(covar)) {
-        model <- lm(y[x0q == j] ~ g[x0q == j])
+        model <- lm(y[x0q == j] ~ g[x0q == j, , drop=F])
       }else{
-        model <- lm(y[x0q == j] ~ g[x0q == j] + covar[x0q == j, , drop = F])
+        model <- lm(y[x0q == j] ~ g[x0q == j, , drop=F] + covar[x0q == j, , drop = F])
       }
     }
     if (family == "binomial") {
       if (is.null(covar)) {
         model <- glm(y[x0q == j] ~ g[x0q == j], family = "binomial")
       }else{
-        model <- glm(y[x0q == j] ~ g[x0q == j] + covar[x0q == j, , drop = F],
+        model <- glm(y[x0q == j] ~ g[x0q == j, ,drop=F] + covar[x0q == j, , drop = F],
           family = "binomial"
         )
       }
@@ -100,9 +100,9 @@ create_nlmr_summary <- function(y,
     model <- NULL
     # model the x coefficient
     if (is.null(covar)) {
-      model2 <- lm(x[x0q == j] ~ g[x0q == j])
+      model2 <- lm(x[x0q == j] ~ ~ g[x0q == j, , drop=F])
     } else {
-      model2 <- lm(x[x0q == j] ~ g[x0q == j] + covar[x0q == j, , drop = F])
+      model2 <- lm(x[x0q == j] ~ ~ g[x0q == j, , drop=F] + covar[x0q == j, , drop = F])
     }
     bx[j] <- model2$coef[2]
     bxse[j] <- summary(model2)$coef[2, 2]
