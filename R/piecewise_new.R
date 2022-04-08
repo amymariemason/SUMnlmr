@@ -45,9 +45,10 @@
 #' at the mean of each stratum; "line" draws upper and lower piecewise lines.
 #' @note The min and max of x stratum values are used to choose the appropiete
 #' range for fitting of each causal estimate. In the code for summarising data,
-#' this is set at the 0.0001% point, and the 99.9999% of each stratum. The first
-#' lower value and all upper value are used to set the break points for the
-#' estimates in the graph. Alternatively you can hardset this using xbreaks.
+#' this is set at the 10% point, and the 90% of each stratum; 20% and 80% in the
+#'  external ends of the end strata. The first lower value and all upper value
+#'  are used to set the break points for the estimates in the graph.
+#'  Alternatively you can hardset this using xbreaks.
 #' @return model the model specifications. The first column is the number of
 #' quantiles (q); the second column is the position used to relate x to the LACE
 #'  in each quantiles (xpos); the third column is the type of confidence

@@ -12,12 +12,30 @@
 #' (i.e. "gaussian" for continuous data) or binomial (i.e. "binomial" for
 #' binary data) family function.
 #' @param controlsonly whether to estimate the gx association in all people,
-#' or in controls only. This is set to TRUE as defau.
+#' or in controls only. This is set to TRUE as default.
 #' It has no effect if family is set to "gaussian"
 #' @param q the number of quantiles the exposure distribution is to be split
 #' into. Within each quantile a causal effect will be fitted, known as a
 #' localised average causal effect (LACE). The default is deciles (i.e. 10
 #' quantiles).
+#' @param strata_method what method to use for determining strata. By default
+#' this is set to "residual", determining the strata from the residual of the
+#' exposure regressed on the instrument (As in Statley and Burgess paper). The
+#' alternate is "rank" for Haodong Tian's ranked version.
+#' @param strata_bound controls what range to use for the LACE estimates in graphs display.
+#' By default this is set to restricted, taking the 10th and 90th percentile of
+#' internal strata and the 20th and 80th for the bottom of the lowest strata and
+#' top of the highest strata. It is a vector taking the percentiles for the
+#' lowers bounds of the bottom and then other strata and then upper bounds of
+#' top and other strata.
+#' This only impacts the "max" and "min" values for the summary table
+#' This can be overridden in piecewise_summ_mr by using the xbreaks argument to
+#' hardset different breakpoints or replacing default with c(0,0,1,1) to return
+#' to true max and minimum
+#' @param extra_statistics This will add a second output reporting extra
+#' statistics for each strata. These include the true max and min of each
+#' strata (regardless of strata_bound setting) and the f statistic and p-value
+#' for the regressions
 #' @return model the model specifications. The first column is the number of
 #' quantiles (q); the second column is the position used to relate x to the LACE
 #'  in each quantiles (xpos); the third column is the type of confidence
@@ -27,6 +45,7 @@
 #' @author Amy Mason, leaning heavily on work by James Statley and Matt Arnold
 #' @import ggplot2
 #' @import matrixStats
+#' @importFrom dplyr mutate group_by row_number arrange
 #' @importFrom stats quantile
 #' @export
 create_nlmr_summary <- function(y,
@@ -35,19 +54,41 @@ create_nlmr_summary <- function(y,
                                 covar = NULL,
                                 family = "gaussian",
                                 controlsonly=TRUE,
-                                q) {
+                                q,
+                                strata_method="residual",
+                                strata_bound=c(0.2,0.1,0.8,0.9),
+                                extra_statistics =FALSE) {
 
   # calculate the iv-free association
   if (family=="binomial" |family=="gaussian") {
-  ivf <- iv_free(
+  if (strata_method=="residual"){
+    ivf <- iv_free(
     y = y, x = x, g = g,
     covar = covar, q = q, family = family, controlsonly=controlsonly
   )
+    x0q <- ivf$x0q
+  } else if(strata_method=="ranked") {
+    # haodong ranked strata method
+    z = rank(g, ties.method = "random")
+    strata1 = floor((z-1)/q)+1
+    strata2 = NULL
+
+    id= seq(x)
+    temp<- data.frame(x=x,strata1=strata1,id=id)
+    temp<-group_by(.data=temp, strata1)
+    temp<- arrange(.data=temp, x)
+    temp<-mutate(.data=temp, x0q= row_number())
+    temp<-arrange(.data=temp, id)
+
+    x0q <- temp$x0q
+  } else {
+    stop("strata ordering must be ranked or residual")
+  }
   } else {
     stop("family must be gaussian or binomial")
   }
 
-  x0q <- ivf$x0q
+
   quant <- q
 
   # this calculates the association for each quanta
@@ -58,61 +99,93 @@ create_nlmr_summary <- function(y,
   xmean <- rep(NA, quant)
   xmax <- rep(NA, quant)
   xmin <- rep(NA, quant)
+  true_xmax <- rep(NA, quant)
+  true_xmin <- rep(NA, quant)
+  strata_stats<-vector("list", quant)
 
 #use the ivfree quantiles
 
   for (j in 1:quant) {
     # describe the quantiles of original data
     if (j==1){
-      xmin[j] <- quantile(x[x0q == j], 0.2)
+      xmin[j] <- quantile(x[x0q == j], strata_bound[1])
     }else{
-      xmin[j] <- quantile(x[x0q == j], 0.1)
+      xmin[j] <- quantile(x[x0q == j], strata_bound[2])
     }
     if (j==quant){
-      xmax[j] <- quantile(x[x0q == j], 0.8)
+      xmax[j] <- quantile(x[x0q == j], strata_bound[3])
     }else{
-      xmax[j] <- quantile(x[x0q == j], 0.9)
+      xmax[j] <- quantile(x[x0q == j], strata_bound[4])
     }
     xmean[j] <- mean(x[x0q == j])
-    # model the y coefficient
-    if (family == "gaussian") {
-      if (is.null(covar)) {
-        model <- lm(y[x0q == j] ~ g[x0q == j])
-      }else{
-        model <- lm(y[x0q == j] ~ g[x0q == j] + covar[x0q == j, , drop = F])
-      }
-    }
+    # model the beta coefficients
     if (family == "binomial") {
       if (is.null(covar)) {
         model <- glm(y[x0q == j] ~ g[x0q == j], family = "binomial")
+        if (controlsonly==T){
+          model2 <- lm(x[x0q == j& y==0] ~ g[x0q == j & y==0])
+        } else {
+          model2 <- lm(x[x0q == j] ~ g[x0q == j])
+        }
       }else{
         model <- glm(y[x0q == j] ~ g[x0q == j] + covar[x0q == j, , drop = F],
-          family = "binomial"
-        )
+                     family = "binomial")
+        if (controlsonly==T){
+          model2 <- lm(x[x0q == j& y==0] ~ g[x0q == j & y==0]+ covar[x0q == j & y==0, , drop = F])
+        } else {
+          model2 <- lm(x[x0q == j] ~ g[x0q == j, drop = F] + covar[x0q == j, , drop = F])
+          }
+        }
+    } else {
+      if (is.null(covar)) {
+        model <- lm(y[x0q == j] ~ g[x0q == j])
+        model2 <- lm(x[x0q == j] ~ g[x0q == j])
+      }else{
+        model <- lm(y[x0q == j] ~ g[x0q == j]+   covar[x0q == j, , drop = F])
+        model2 <- lm(x[x0q == j] ~ g[x0q == j]+   covar[x0q == j, , drop = F])
       }
     }
-    if (is.na(model$coef[2])) {
+
+if (is.na(model$coef[2])) {
       stop("the regression coefficient of the outcome on the instrument
            in one of the quantiles is missing")
     }
     by[j] <- model$coef[2]
     byse[j] <- summary(model)$coef[2, 2]
-    model <- NULL
-    # model the x coefficient
-    if (is.null(covar)) {
-      model2 <- lm(x[x0q == j] ~ g[x0q == j])
-    } else {
-      model2 <- lm(x[x0q == j] ~ g[x0q == j] + covar[x0q == j, , drop = F])
-    }
-    bx[j] <- model2$coef[2]
+
+       bx[j] <- model2$coef[2]
     bxse[j] <- summary(model2)$coef[2, 2]
+
+
+    if (extra_statistics) {
+      stats<- list( strata=j,
+        xmin = quantile(x[x0q == j], 0),
+                         xmax = quantile(x[x0q == j], 1),
+                   xmean = mean(x[x0q == j]),
+                         ymin = quantile(y[x0q == j], 0),
+                         ymax = quantile(y[x0q == j], 1),
+                         x_fstat = summary(model2)$fstatistic[1]
+
+                   )
+      strata_stats[[j]]<-append(strata_stats[[j]], stats)
+
+    }
+
+    model <- NULL
     model2 <- NULL
   }
   # output data
   output <- data.frame(bx, by, bxse, byse, xmean, xmin, xmax)
   names(output) <- c("bx", "by", "bxse", "byse", "xmean", "xmin", "xmax")
+
+
   # print(list(summary = head(output)))
-  invisible(list(summary = output))
+  if (extra_statistics) {
+    stats<- as.data.frame(do.call(rbind, strata_stats))
+  invisible(list(summary = output, strata_statistics=stats))
+  } else {
+    invisible(list(summary = output))
+  }
 }
 
 #' Generation of individual level data

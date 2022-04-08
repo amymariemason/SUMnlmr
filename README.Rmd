@@ -83,7 +83,7 @@ summ_data<-create_nlmr_summary(y = test_data$quadratic.Y,
                                 controlsonly = FALSE,
                                 q = 10)
 
-head(summ_data)
+head(summ_data$summary)
 ```
 If we have co-variants we want to adjust for in our analysis, we need to include
 them at this stage. 
@@ -99,7 +99,7 @@ summ_covar<-create_nlmr_summary(y = test_data$quadratic.Y,
                                 family = "gaussian",
                                 q = 10)
 
-head(summ_covar)
+head(summ_covar$summary)
 ```
 Note: Because the covariants are included as a matrix, lm cannot detect factor 
 variables and create automatic dummy variables for them. The easiest way to 
@@ -122,7 +122,7 @@ summ_covar2<-create_nlmr_summary(y = test_data$quadratic.Y,
                                  family = "gaussian",
                                  q = 10)
 
-head(summ_covar2)
+head(summ_covar2$summary)
 ```
 
 These have used a single genetic variant count, but the method works identically 
@@ -219,7 +219,7 @@ model.
 
 test_data$y.bin<-stats::rbinom(size=1, p=0.5, n=10000)
 
-# create semo-summ data
+# create summ data
 summ_bin<-create_nlmr_summary(y = test_data$y.bin,
                                 x = test_data$X,
                                 g = test_data$g,
