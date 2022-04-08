@@ -11,7 +11,10 @@ create_nlmr_summary(
   covar = NULL,
   family = "gaussian",
   controlsonly = TRUE,
-  q
+  q,
+  strata_method = "residual",
+  strata_bound = c(0.2, 0.1, 0.8, 0.9),
+  extra_statistics = FALSE
 )
 }
 \arguments{
@@ -29,13 +32,34 @@ For piecewise_mr this can be a character string naming either the gaussian
 binary data) family function.}
 
 \item{controlsonly}{whether to estimate the gx association in all people,
-or in controls only. This is set to TRUE as defau.
+or in controls only. This is set to TRUE as default.
 It has no effect if family is set to "gaussian"}
 
 \item{q}{the number of quantiles the exposure distribution is to be split
 into. Within each quantile a causal effect will be fitted, known as a
 localised average causal effect (LACE). The default is deciles (i.e. 10
 quantiles).}
+
+\item{strata_method}{what method to use for determining strata. By default
+this is set to "residual", determining the strata from the residual of the
+exposure regressed on the instrument (As in Statley and Burgess paper). The
+alternate is "rank" for Haodong Tian's ranked version.}
+
+\item{strata_bound}{controls what range to use for the LACE estimates in graphs display.
+By default this is set to restricted, taking the 10th and 90th percentile of
+internal strata and the 20th and 80th for the bottom of the lowest strata and
+top of the highest strata. It is a vector taking the percentiles for the
+lowers bounds of the bottom and then other strata and then upper bounds of
+top and other strata.
+This only impacts the "max" and "min" values for the summary table
+This can be overridden in piecewise_summ_mr by using the xbreaks argument to
+hardset different breakpoints or replacing default with c(0,0,1,1) to return
+to true max and minimum}
+
+\item{extra_statistics}{This will add a second output reporting extra
+statistics for each strata. These include the true max and min of each
+strata (regardless of strata_bound setting) and the f statistic and p-value
+for the regressions}
 }
 \value{
 model the model specifications. The first column is the number of

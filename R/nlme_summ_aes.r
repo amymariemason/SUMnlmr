@@ -35,6 +35,7 @@ hamardman.prod <- function(coef, covar){
 #' @return \item{xcoef}{the association between the exposure and the instrument}
 #' @return \item{x0}{the IV-free exposure.}
 #' @return \item{x0q}{the quantiles of x0.}
+#' @export
 #' @author Amy Mason <am2609@medschl.cam.ac.uk> based on similar function in nlmr
 #' by James R Staley
 iv_free <- function(y,
