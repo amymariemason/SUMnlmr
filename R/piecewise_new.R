@@ -496,8 +496,12 @@ piecewise_summ_figure <- function(xcoef, coef,
       )
 
     if (!is.null(breaks)) {
-      figure <- figure + scale_y_continuous(trans = "exp", breaks = breaks)
+      figure <- figure + scale_y_continuous(breaks = breaks)
     }
+    ybreaks<-ggplot_build(figure)$layout$panel_params[[1]]$y$breaks
+    figure<-figure + scale_y_continuous(trans="log", breaks=ybreaks)
+
+
   }
   return(figure)
 }
@@ -506,8 +510,8 @@ piecewise_summ_figure <- function(xcoef, coef,
 
 #' Summary of piecewise linear fits
 #'
-#' summary method for class "piecewise_mr".
-#' @param object an object of class "piecewise_mr".
+#' summary method for class "piecewise_summ_mr".
+#' @param object an object of class "piecewise_summ_mr".
 #' @param ... Arguments to be passed to or from other methods,
 #' @author Amy Mason <am2609@medschl.cam.ac.uk>
 #' @export
@@ -533,7 +537,7 @@ summary.piecewise_summ_mr <- function(object, ...) {
       figure = object$figure
     )
   }
-  class(summ) <- "summary.piecewise_mr"
+  class(summ) <- "summary.piecewise_summ_mr"
   return(summ)
 }
 

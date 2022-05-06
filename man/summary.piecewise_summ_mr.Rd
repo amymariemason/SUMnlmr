@@ -7,12 +7,12 @@
 \method{summary}{piecewise_summ_mr}(object, ...)
 }
 \arguments{
-\item{object}{an object of class "piecewise_mr".}
+\item{object}{an object of class "piecewise_summ_mr".}
 
 \item{...}{Arguments to be passed to or from other methods,}
 }
 \description{
-summary method for class "piecewise_mr".
+summary method for class "piecewise_summ_mr".
 }
 \author{
 Amy Mason \href{mailto:am2609@medschl.cam.ac.uk}{am2609@medschl.cam.ac.uk}
