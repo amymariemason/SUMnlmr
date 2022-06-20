@@ -37,7 +37,7 @@
 #' strata (regardless of strata_bound setting) and the f statistic and p-value
 #' for the regressions
 #' @param report_GR This will add the Gelman-Rubin statistics for each strata
-#' to the output. Note this only works if strata_method="rank"
+#' to the output. Note this only works if strata_method="ranked".
 #' @return model the model specifications. The first column is the number of
 #' quantiles (q); the second column is the position used to relate x to the LACE
 #'  in each quantiles (xpos); the third column is the type of confidence
@@ -194,7 +194,7 @@ if (is.na(model$coef[2])) {
     stats<- as.data.frame(do.call(rbind, strata_stats))
     final_output_list<- c(final_output_list, strata_statistics=stats)
   }
-  if (strata_method=="rank"){
+  if (strata_method=="ranked"){
     final_output_list<- c(final_output_list,  GR_max=GR_stats[1])
   if (report_GR==TRUE){
     final_output_list<- c(final_output_list,
