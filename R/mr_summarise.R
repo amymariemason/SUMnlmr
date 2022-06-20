@@ -21,7 +21,7 @@
 #' @param strata_method what method to use for determining strata. By default
 #' this is set to "residual", determining the strata from the residual of the
 #' exposure regressed on the instrument (As in Statley and Burgess paper). The
-#' alternate is "rank" for Haodong Tian's ranked version.
+#' alternate is "ranked" for Haodong Tian's double ranked version.
 #' @param strata_bound controls what range to use for the LACE estimates in graphs display.
 #' By default this is set to restricted, taking the 10th and 90th percentile of
 #' internal strata and the 20th and 80th for the bottom of the lowest strata and
@@ -36,6 +36,8 @@
 #' statistics for each strata. These include the true max and min of each
 #' strata (regardless of strata_bound setting) and the f statistic and p-value
 #' for the regressions
+#' @param report_GR This will add the Gelman-Rubin statistics for each strata
+#' to the output. Note this only works if strata_method="rank"
 #' @return model the model specifications. The first column is the number of
 #' quantiles (q); the second column is the position used to relate x to the LACE
 #'  in each quantiles (xpos); the third column is the type of confidence
@@ -57,8 +59,13 @@ create_nlmr_summary <- function(y,
                                 q,
                                 strata_method="residual",
                                 strata_bound=c(0.2,0.1,0.8,0.9),
-                                extra_statistics =FALSE) {
+                                extra_statistics =FALSE,
+                                report_GR=FALSE) {
 
+  # checks
+  stopifnot(
+    "report_GR only works with strata_method ranked" = !(report_GR==TRUE & strata_method!="ranked")
+  )
   # calculate the iv-free association
   if (family=="binomial" |family=="gaussian") {
   if (strata_method=="residual"){
@@ -71,6 +78,8 @@ create_nlmr_summary <- function(y,
     # haodong ranked strata method
     z = rank(g, ties.method = "random")
     strata1 = floor((z-1)/q)+1
+    # check GR statistic
+    GR_stats<-getGRvalues(X=x, Zstratum=strata1)
     strata2 = NULL
 
     id= seq(x)
@@ -171,21 +180,31 @@ if (is.na(model$coef[2])) {
 
     }
 
+
     model <- NULL
     model2 <- NULL
   }
   # output data
+
   output <- data.frame(bx, by, bxse, byse, xmean, xmin, xmax)
   names(output) <- c("bx", "by", "bxse", "byse", "xmean", "xmin", "xmax")
 
-
-  # print(list(summary = head(output)))
+  final_output_list= list(summary=output)
   if (extra_statistics) {
     stats<- as.data.frame(do.call(rbind, strata_stats))
-  invisible(list(summary = output, strata_statistics=stats))
-  } else {
-    invisible(list(summary = output))
+    final_output_list<- c(final_output_list, strata_statistics=stats)
   }
+  if (strata_method=="rank"){
+    final_output_list<- c(final_output_list,  GR_max=GR_stats[1])
+  if (report_GR==TRUE){
+    final_output_list<- c(final_output_list,
+                          GR_results=GR_stats)
+  }}
+
+
+  # print(list(summary = head(output)))
+    invisible(final_output_list)
+
 }
 
 #' Generation of individual level data

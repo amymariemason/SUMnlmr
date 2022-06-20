@@ -14,7 +14,8 @@ create_nlmr_summary(
   q,
   strata_method = "residual",
   strata_bound = c(0.2, 0.1, 0.8, 0.9),
-  extra_statistics = FALSE
+  extra_statistics = FALSE,
+  report_GR = FALSE
 )
 }
 \arguments{
@@ -43,7 +44,7 @@ quantiles).}
 \item{strata_method}{what method to use for determining strata. By default
 this is set to "residual", determining the strata from the residual of the
 exposure regressed on the instrument (As in Statley and Burgess paper). The
-alternate is "rank" for Haodong Tian's ranked version.}
+alternate is "ranked" for Haodong Tian's double ranked version.}
 
 \item{strata_bound}{controls what range to use for the LACE estimates in graphs display.
 By default this is set to restricted, taking the 10th and 90th percentile of
@@ -60,6 +61,9 @@ to true max and minimum}
 statistics for each strata. These include the true max and min of each
 strata (regardless of strata_bound setting) and the f statistic and p-value
 for the regressions}
+
+\item{report_GR}{This will add the Gelman-Rubin statistics for each strata
+to the output. Note this only works if strata_method="rank"}
 }
 \value{
 model the model specifications. The first column is the number of
