@@ -191,13 +191,12 @@ if (is.na(model$coef[2])) {
   final_output_list= list(summary=output)
   if (extra_statistics) {
     stats<- as.data.frame(do.call(rbind, strata_stats))
-    final_output_list<- c(final_output_list, strata_statistics=stats)
+    final_output_list[["strata_statistics"]]<- stats
   }
   if (strata_method=="ranked"){
-    final_output_list<- c(final_output_list,  GR_max=GR_stats[1])
+    final_output_list[["GR_max"]]<- GR_stats[1]
   if (report_GR==TRUE){
-    final_output_list<- c(final_output_list,
-                          GR_results=GR_stats)
+    final_output_list[["GR_results"]]<-GR_stats
   }}
 
 
