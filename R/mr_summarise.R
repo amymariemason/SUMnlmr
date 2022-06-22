@@ -64,7 +64,8 @@ create_nlmr_summary <- function(y,
 
   # checks
   stopifnot(
-    "report_GR only works with strata_method ranked" = !(report_GR==TRUE & strata_method!="ranked")
+    "report_GR only works with strata_method ranked" = !(report_GR==TRUE &
+                                                      strata_method!="ranked")
   )
 
   # covar issue
