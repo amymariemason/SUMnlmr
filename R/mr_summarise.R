@@ -55,7 +55,7 @@ create_nlmr_summary <- function(y,
                                 g,
                                 covar = NULL,
                                 family = "gaussian",
-                                controlsonly=TRUE,
+                                controlsonly=FALSE,
                                 q,
                                 strata_method="residual",
                                 strata_bound=c(0.2,0.1,0.8,0.9),
@@ -80,13 +80,12 @@ create_nlmr_summary <- function(y,
     strata1 = floor((z-1)/q)+1
     # check GR statistic
     GR_stats<-getGRvalues(X=x, Zstratum=strata1)
-    strata2 = NULL
 
     id= seq(x)
-    temp<- data.frame(x=x,strata1=strata1,id=id)
-    temp<-group_by(.data=temp, strata1)
+    temp<- data.frame(x=x,strata1=strata1,id=id, g=g)
     temp<- arrange(.data=temp, x)
-    temp<-mutate(.data=temp, x0q= row_number())
+    temp<-group_by(.data=temp, strata1)
+    temp<-mutate(.data=temp, x0q= rank(x, ties.method = "random"))
     temp<-arrange(.data=temp, id)
 
     x0q <- temp$x0q
