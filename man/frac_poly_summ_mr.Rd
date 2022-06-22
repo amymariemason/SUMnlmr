@@ -12,7 +12,7 @@ frac_poly_summ_mr(
   bxse,
   xmean,
   method = "FE",
-  d = 1,
+  d = "both",
   powers = c(0, -2, -1.5, -1, -0.5, 1, 2),
   pd = 0.05,
   ci = "model_se",
