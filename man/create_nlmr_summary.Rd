@@ -10,7 +10,7 @@ create_nlmr_summary(
   g,
   covar = NULL,
   family = "gaussian",
-  controlsonly = TRUE,
+  controlsonly = FALSE,
   q,
   strata_method = "residual",
   strata_bound = c(0.2, 0.1, 0.8, 0.9),
@@ -33,7 +33,7 @@ For piecewise_mr this can be a character string naming either the gaussian
 binary data) family function.}
 
 \item{controlsonly}{whether to estimate the gx association in all people,
-or in controls only. This is set to TRUE as default.
+or in controls only. This is set to FALSE as default.
 It has no effect if family is set to "gaussian"}
 
 \item{q}{the number of quantiles the exposure distribution is to be split
@@ -63,7 +63,7 @@ strata (regardless of strata_bound setting) and the f statistic and p-value
 for the regressions}
 
 \item{report_GR}{This will add the Gelman-Rubin statistics for each strata
-to the output. Note this only works if strata_method="rank"}
+to the output. Note this only works if strata_method="ranked".}
 }
 \value{
 model the model specifications. The first column is the number of

@@ -68,7 +68,7 @@ create_nlmr_summary <- function(y,
   )
 
   # covar issue
-  if (!(is.matrix(covar) & is.numeric(covar))) {
+  if (!is.null(covar) & !(is.matrix(covar) & is.numeric(covar))) {
     warning("covariates should be entered as numeric matrix:
             attempting to covert", immediate.=TRUE)
     covar2<-model.matrix(y~.,data=as.data.frame(covar))[,-1]

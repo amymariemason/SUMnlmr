@@ -13,6 +13,12 @@ test_that("creates correct summary",{
                                                         covar = NULL,
                                                         family = "gaussian",
                                                         q = 10)$summary)
+})
+
+test_that("creates correct summary2",{
+  set.seed(1234)
+  test_data<-generated_data
+  test_data$y.bin<-stats::rbinom(size=1, p=0.5, n=10000)
 
   expect_snapshot_output(create_nlmr_summary(y = test_data$y.bin,
                                              x = test_data$X,
