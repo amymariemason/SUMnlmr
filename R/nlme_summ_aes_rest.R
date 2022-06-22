@@ -96,7 +96,7 @@ if (getRversion() >= "2.15.1") {
 ## fix in line 204 to correct a typo; add $x to give
 ## log(plot_data$x) in the second from last term
 
-frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = 1,
+frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = "both",
                               powers = c(0, -2, -1.5, -1, -0.5, 1, 2),
                               pd = 0.05, ci = "model_se", nboot = 100,
                               fig = FALSE, family = "binomial", offset = 0,
