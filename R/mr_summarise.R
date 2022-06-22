@@ -12,7 +12,7 @@
 #' (i.e. "gaussian" for continuous data) or binomial (i.e. "binomial" for
 #' binary data) family function.
 #' @param controlsonly whether to estimate the gx association in all people,
-#' or in controls only. This is set to TRUE as default.
+#' or in controls only. This is set to FALSE as default.
 #' It has no effect if family is set to "gaussian"
 #' @param q the number of quantiles the exposure distribution is to be split
 #' into. Within each quantile a causal effect will be fitted, known as a
@@ -66,6 +66,19 @@ create_nlmr_summary <- function(y,
   stopifnot(
     "report_GR only works with strata_method ranked" = !(report_GR==TRUE & strata_method!="ranked")
   )
+
+  # covar issue
+  if (!(is.matrix(covar) & is.numeric(covar))) {
+    warning("covariates should be entered as numeric matrix:
+            attempting to covert", immediate.=TRUE)
+    covar2<-model.matrix(y~.,data=as.data.frame(covar))[,-1]
+    print(head(covar2))
+    user_input <- readline("Do you want to run using this matrix for covariates (y/n) ")
+    if(user_input != 'y') stop('Exiting since you did not press y')
+    covar<-covar2
+
+  }
+
   # calculate the iv-free association
   if (family=="binomial" |family=="gaussian") {
   if (strata_method=="residual"){
