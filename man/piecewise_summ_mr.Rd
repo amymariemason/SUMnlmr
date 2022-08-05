@@ -15,6 +15,7 @@ piecewise_summ_mr(
   xmax,
   xbreaks = NULL,
   family = "gaussian",
+  average.exposure.associations = FALSE,
   ci = "model_se",
   nboot = 1000,
   fig = T,
@@ -48,6 +49,8 @@ piecewise_summ_mr(
 used in the model. This is a character string naming
 either the gaussian (i.e. "gaussian" for continuous data) or binomial
 (i.e. "binomial" for binary data) family function.}
+
+\item{average.exposure.associations}{TRUE means that the bx estimates are averaged across strata, FALSE means that they are not. Default option is FALSE.}
 
 \item{ci}{the type of 95\\\% confidence interval. There are four options:
 (i) using the model standard errors ('model_se'), (ii) using bootstrap

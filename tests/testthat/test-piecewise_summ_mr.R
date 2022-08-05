@@ -11,7 +11,8 @@ test_that("processes summarised data correctly",{
                                           nboot=1000,
                                           fig=TRUE,
                                           family="gaussian",
-                                          ci_fig="ribbon")
+                                          ci_fig="ribbon",
+                                          average.exposure.associations = TRUE)
   )
 
   expect_snapshot_output(summary(model))
@@ -21,7 +22,8 @@ test_that("processes summarised data correctly",{
                                            ci="model_se",
                                            fig=TRUE,
                                            family="binomial",
-                                           ci_fig="point")
+                                           ci_fig="point",
+                                           average.exposure.associations = TRUE)
   )
 
   expect_snapshot_output(summary(model2))
