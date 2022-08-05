@@ -46,6 +46,7 @@ if (getRversion() >= "2.15.1") {
 #' function that represents the expected difference in the outcome compared
 #' with this reference value when the exposure is set to different values.
 #' If \code{ref = NA} (the default option), then it is set to the mean of x.
+#' @param average.exposure.associations TRUE means that the bx estimates are averaged across strata, FALSE means that they are not. Default option is FALSE.
 #' @param ci_type the type of confidence interval to be displayed on the graph.
 #' The default is 'overall' where confidence intervals are presented as bands
 #' across the range of x. The alternative option is 'quantile' where the
@@ -98,7 +99,7 @@ if (getRversion() >= "2.15.1") {
 
 frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = "both",
                               powers = c(0, -2, -1.5, -1, -0.5, 1, 2),
-                              pd = 0.05, ci = "model_se", nboot = 100,
+                              pd = 0.05, average.exposure.associations = FALSE, ci = "model_se", nboot = 100,
                               fig = FALSE, family = "binomial", offset = 0,
                               pref_x = "x", pref_y = "y", ref = NA,
                               ci_type = "overall", breaks = NULL,
@@ -117,7 +118,8 @@ frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = "bot
   frac_se <- byse
   xcoef_sub <- bx
   xcoef_sub_se <- bxse
-  xcoef <- sum(bx * (bxse^-2)) / sum(bxse^-2)
+    if (average.exposure.associations == TRUE) { xcoef <- sum(bx * (bxse^(-2))) / sum(bxse^(-2)) }
+   else { xcoef <- bx }
   q <- length(by)
 
   ##### Test of IV-exposure assumption #####
