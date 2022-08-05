@@ -12,7 +12,8 @@ test_that("processes summarised data correctly",{
                                                     byse=byse,
                                                     xmean=xmean,
                                                     family="binomial",
-                                                    fig=TRUE)
+                                                    fig=TRUE,
+                                          average.exposure.associations = TRUE)
   )
 
   expect_snapshot_output(summary(model))
@@ -24,7 +25,8 @@ test_that("processes summarised data correctly",{
                                           byse=byse,
                                           xmean=xmean,
                                           family="gaussian",
-                                          fig=TRUE)
+                                          fig=TRUE,
+                                          average.exposure.associations = TRUE)
   )
 
   expect_snapshot_output(summary(model2))

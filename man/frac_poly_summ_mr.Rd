@@ -15,6 +15,7 @@ frac_poly_summ_mr(
   d = "both",
   powers = c(0, -2, -1.5, -1, -0.5, 1, 2),
   pd = 0.05,
+  average.exposure.associations = FALSE,
   ci = "model_se",
   nboot = 100,
   fig = FALSE,
@@ -54,6 +55,8 @@ options are: 1, 2, or 'both'.}
 \item{pd}{p-value cut-off for choosing the best-fitting fractional polynomial
 of degree 2 over the best-fitting fractional polynomial degree 1. This
 option is only used if d='both'. The default is 0.05.}
+
+\item{average.exposure.associations}{TRUE means that the bx estimates are averaged across strata, FALSE means that they are not. Default option is FALSE.}
 
 \item{ci}{the type of 95\\\% confidence interval. There are three options:
 (i) using the model standard errors ('model_se'), (ii) using bootstrap
