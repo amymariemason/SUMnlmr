@@ -57,6 +57,7 @@ if (getRversion() >= "2.15.1") {
 #' @param xlim_upper upper limit for the x-axis of the figure.
 #' @param ylim_lower lower limit for the y-axis of the figure.
 #' @param ylim_upper upper limit for the y-axis of the figure.
+#' @param seed The random seed to use when generating the bootstrap samples (for reproducibility). If set to \code{NA}, the random seed will not be set.
 #' @return model the model specifications. The first column is the number of
 #' quantiles (q); the second column is the position used to relate x to the LACE
 #'  in each quantiles (xpos); the third column is the type of confidence
@@ -104,7 +105,15 @@ frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = "bot
                               pref_x = "x", pref_y = "y", ref = NA,
                               ci_type = "overall", breaks = NULL,
                               ylim_lower = NA, ylim_upper = NA,
-                              xlim_lower = NA, xlim_upper = NA) {
+                              xlim_lower = NA, xlim_upper = NA, seed=33550336) {
+  
+  if( exists(".Random.seed") ) {
+  old <- .Random.seed
+  on.exit( { .Random.seed <<- old } )
+}
+if (!is.na(seed)) { set.seed(seed) }
+
+  
   ##### Error messages #####
   if (!(d == 1 | d == 2 | d == "both")) {
     stop("the degree has to equal 1, 2 or \"both\"")
