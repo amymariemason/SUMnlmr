@@ -44,6 +44,7 @@
 #' @param breaks breaks on the y-axis of the figure.
 #' @param ci_fig setting confidence interval type. "point" places error bars
 #' at the mean of each stratum; "line" draws upper and lower piecewise lines.
+#' @param seed The random seed to use when generating the bootstrap samples (for reproducibility). If set to \code{NA}, the random seed will not be set.
 #' @note The min and max of x stratum values are used to choose the appropiete
 #' range for fitting of each causal estimate. In the code for summarising data,
 #' this is set at the 10% point, and the 90% of each stratum; 20% and 80% in the
@@ -86,7 +87,15 @@ piecewise_summ_mr <- function(by,
                               pref_x_ref = "x",
                               pref_y = "y",
                               breaks = NULL,
-                              ci_fig = "point") {
+                              ci_fig = "point", seed=87539319) {
+  
+  if( exists(".Random.seed") ) {
+  old <- .Random.seed
+  on.exit( { .Random.seed <<- old } )
+}
+if (!is.na(seed)) { set.seed(seed) }
+
+  
   ##### Error messages #####
 
   stopifnot(is.vector(by),
