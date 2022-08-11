@@ -980,7 +980,7 @@ frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = "bot
     se = (abs(frac_se / xcoef)),
     lci = (frac_coef / xcoef - 1.96 * (abs(frac_se / xcoef))),
     uci = (frac_coef / xcoef + 1.96 * (abs(frac_se / xcoef))),
-    pval = (2 * stats::rnorm(-abs(frac_coef / frac_se)))
+    pval = (2 * stats::pnorm(-abs(frac_coef / frac_se)))
   ))
   rownames(lace) <- 1:nrow(lace)
   xcoef_quant <- as.matrix(data.frame(beta = xcoef_sub, se = xcoef_sub_se))
