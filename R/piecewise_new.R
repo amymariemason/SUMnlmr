@@ -87,15 +87,15 @@ piecewise_summ_mr <- function(by,
                               pref_x_ref = "x",
                               pref_y = "y",
                               breaks = NULL,
-                              ci_fig = "point", seed=87539319) {
-  
+                              ci_fig = "point", seed=875) {
+
   if( exists(".Random.seed") ) {
   old <- .Random.seed
   on.exit( { .Random.seed <<- old } )
 }
 if (!is.na(seed)) { set.seed(seed) }
 
-  
+
   ##### Error messages #####
 
   stopifnot(is.vector(by),

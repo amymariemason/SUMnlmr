@@ -16,7 +16,7 @@ create_nlmr_summary(
   strata_bound = c(0.2, 0.1, 0.8, 0.9),
   extra_statistics = FALSE,
   report_GR = FALSE,
-  seed = 9814072356
+  seed = 1234
 )
 }
 \arguments{

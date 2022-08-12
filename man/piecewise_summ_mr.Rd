@@ -25,7 +25,7 @@ piecewise_summ_mr(
   pref_y = "y",
   breaks = NULL,
   ci_fig = "point",
-  seed = 87539319
+  seed = 875
 )
 }
 \arguments{

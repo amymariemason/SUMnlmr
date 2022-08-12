@@ -30,7 +30,7 @@ frac_poly_summ_mr(
   ylim_upper = NA,
   xlim_lower = NA,
   xlim_upper = NA,
-  seed = 33550336
+  seed = 335
 )
 }
 \arguments{

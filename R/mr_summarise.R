@@ -61,7 +61,7 @@ create_nlmr_summary <- function(y,
                                 strata_method="residual",
                                 strata_bound=c(0.2,0.1,0.8,0.9),
                                 extra_statistics =FALSE,
-                                report_GR=FALSE, seed=9814072356) {
+                                report_GR=FALSE, seed=1234) {
 
   if( exists(".Random.seed") ) {
   old <- .Random.seed
@@ -69,7 +69,7 @@ create_nlmr_summary <- function(y,
 }
 if (!is.na(seed)) { set.seed(seed) }
 
-  
+
   # checks
   stopifnot(
     "report_GR only works with strata_method ranked" = !(report_GR==TRUE &

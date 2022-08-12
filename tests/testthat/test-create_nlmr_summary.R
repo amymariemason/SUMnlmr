@@ -33,7 +33,7 @@ test_that("creates correct summary2",{
                                              g = test_data$g,
                                              covar = NULL,
                                              family = "gaussian",
-                                             q = 10, strata_method = "ranked"
+                                             q = 10, strata_method = "ranked", seed=NA
                                             )$summary)
 
   expect_snapshot_output(create_nlmr_summary(y = test_data$log.Y,
@@ -42,7 +42,7 @@ test_that("creates correct summary2",{
                                              covar = NULL,
                                              family = "gaussian",
                                              q = 4, strata_method = "ranked",
-                                             extra_statistics = TRUE)$strata_statistics)
+                                             extra_statistics = TRUE, seed=NA)$strata_statistics)
 
   expect_snapshot_output(create_nlmr_summary(y = test_data$log.Y,
                                              x = round(test_data$X),
@@ -50,7 +50,7 @@ test_that("creates correct summary2",{
                                              covar = NULL,
                                              family = "gaussian",
                                              q = 4, strata_method = "ranked",
-                                             report_GR = TRUE
+                                             report_GR = TRUE, seed=NA
                                             )$GR_results)
 })
 

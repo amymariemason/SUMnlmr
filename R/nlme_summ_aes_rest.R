@@ -105,15 +105,15 @@ frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = "bot
                               pref_x = "x", pref_y = "y", ref = NA,
                               ci_type = "overall", breaks = NULL,
                               ylim_lower = NA, ylim_upper = NA,
-                              xlim_lower = NA, xlim_upper = NA, seed=33550336) {
-  
+                              xlim_lower = NA, xlim_upper = NA, seed=335) {
+
   if( exists(".Random.seed") ) {
   old <- .Random.seed
   on.exit( { .Random.seed <<- old } )
 }
 if (!is.na(seed)) { set.seed(seed) }
 
-  
+
   ##### Error messages #####
   if (!(d == 1 | d == 2 | d == "both")) {
     stop("the degree has to equal 1, 2 or \"both\"")
