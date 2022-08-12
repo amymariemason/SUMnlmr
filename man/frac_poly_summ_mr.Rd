@@ -29,7 +29,8 @@ frac_poly_summ_mr(
   ylim_lower = NA,
   ylim_upper = NA,
   xlim_lower = NA,
-  xlim_upper = NA
+  xlim_upper = NA,
+  seed = 33550336
 )
 }
 \arguments{
@@ -100,6 +101,8 @@ quantile of x.}
 \item{xlim_lower}{lower limit for the x-axis of the figure.}
 
 \item{xlim_upper}{upper limit for the x-axis of the figure.}
+
+\item{seed}{The random seed to use when generating the bootstrap samples (for reproducibility). If set to \code{NA}, the random seed will not be set.}
 }
 \value{
 model the model specifications. The first column is the number of

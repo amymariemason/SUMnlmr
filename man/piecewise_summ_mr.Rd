@@ -24,7 +24,8 @@ piecewise_summ_mr(
   pref_x_ref = "x",
   pref_y = "y",
   breaks = NULL,
-  ci_fig = "point"
+  ci_fig = "point",
+  seed = 87539319
 )
 }
 \arguments{
@@ -80,6 +81,8 @@ The default is "x".}
 
 \item{ci_fig}{setting confidence interval type. "point" places error bars
 at the mean of each stratum; "line" draws upper and lower piecewise lines.}
+
+\item{seed}{The random seed to use when generating the bootstrap samples (for reproducibility). If set to \code{NA}, the random seed will not be set.}
 }
 \value{
 model the model specifications. The first column is the number of
