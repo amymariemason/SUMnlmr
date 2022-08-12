@@ -38,6 +38,7 @@
 #' for the regressions
 #' @param report_GR This will add the Gelman-Rubin statistics for each strata
 #' to the output. Note this only works if strata_method="ranked".
+#' @param seed The random seed to use when generating the quantiles (for reproducibility). If set to \code{NA}, the random seed will not be set.
 #' @return model the model specifications. The first column is the number of
 #' quantiles (q); the second column is the position used to relate x to the LACE
 #'  in each quantiles (xpos); the third column is the type of confidence
@@ -60,7 +61,14 @@ create_nlmr_summary <- function(y,
                                 strata_method="residual",
                                 strata_bound=c(0.2,0.1,0.8,0.9),
                                 extra_statistics =FALSE,
-                                report_GR=FALSE) {
+                                report_GR=FALSE, seed=1234) {
+
+  if( exists(".Random.seed") ) {
+  old <- .Random.seed
+  on.exit( { .Random.seed <<- old } )
+}
+if (!is.na(seed)) { set.seed(seed) }
+
 
   # checks
   stopifnot(

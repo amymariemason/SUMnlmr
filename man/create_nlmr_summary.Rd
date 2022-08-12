@@ -15,7 +15,8 @@ create_nlmr_summary(
   strata_method = "residual",
   strata_bound = c(0.2, 0.1, 0.8, 0.9),
   extra_statistics = FALSE,
-  report_GR = FALSE
+  report_GR = FALSE,
+  seed = 1234
 )
 }
 \arguments{
@@ -64,6 +65,8 @@ for the regressions}
 
 \item{report_GR}{This will add the Gelman-Rubin statistics for each strata
 to the output. Note this only works if strata_method="ranked".}
+
+\item{seed}{The random seed to use when generating the quantiles (for reproducibility). If set to \code{NA}, the random seed will not be set.}
 }
 \value{
 model the model specifications. The first column is the number of
