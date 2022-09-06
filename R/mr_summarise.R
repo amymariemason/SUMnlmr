@@ -80,13 +80,14 @@ if (!is.na(seed)) { set.seed(seed) }
   if (!is.null(covar) & !(is.matrix(covar) & is.numeric(covar))) {
     warning("covariates should be entered as numeric matrix:
             attempting to covert", immediate.=TRUE)
-    covar2<-model.matrix(y~.,data=as.data.frame(covar))[,-1]
+    covar2<-model.matrix(~.,data=as.data.frame(covar), na.action=na.pass)[,-1]
     print(head(covar2))
     user_input <- readline("Do you want to run using this matrix for covariates (y/n) ")
     if(user_input != 'y') stop('Exiting since you did not press y')
-    covar<-covar2
+    covar<-as.matrix(covar2)
 
   }
+
 
   # calculate the iv-free association
   if (family=="binomial" |family=="gaussian") {
