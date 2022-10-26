@@ -17,10 +17,6 @@
     Fractional polynomial non-linearity p-value: 0.0042
     Quadratic p-value: 0.013
     Cochran Q p-value: 0.193
-    
-    Heterogeneity tests
-    Cochran Q p-value: 0
-    Trend p-value: 4.34e-44
 
 ---
 
@@ -45,10 +41,6 @@
     Fractional polynomial non-linearity p-value: 0.0042
     Quadratic p-value: 0.013
     Cochran Q p-value: 0.193
-    
-    Heterogeneity tests
-    Cochran Q p-value: 0
-    Trend p-value: 4.34e-44
 
 ---
 
