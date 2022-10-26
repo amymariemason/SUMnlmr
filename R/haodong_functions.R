@@ -53,8 +53,8 @@ getGRvalues<-function(X=X,
   #checks
 
   stopifnot(
-    "NC is not numeric" = is.number(NC),
-    "tl is not numeric" = is.number(tl),
+    "NC is not numeric" = is.numeric(NC),
+    "tl is not numeric" = is.numeric(tl),
     "X is not numeric" = is.numeric(X),
     "ZStratum is not numeric" = is.numeric(Zstratum),
     "difference number of observations for the strata & exposure" =
