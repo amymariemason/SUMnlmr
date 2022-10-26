@@ -82,7 +82,6 @@ if (getRversion() >= "2.15.1") {
 #' the second column is the p-value from the fractional polynomial non-linearity
 #'  test (fp); the third column is the p-value from the quadratic test (quad);
 #'  the fourth column is the p-value from the Cochran Q test (Q).
-#' @return p_heterogeneity the p-value of heterogeneity.
 #' The first column is the p-value of the Cochran Q heterogeneity test (Q);
 #' the second column is the p-value from the trend test (trend).
 #' @return figure ggplot command to produce a figure.
@@ -131,16 +130,6 @@ if (!is.na(seed)) { set.seed(seed) }
    else { xcoef <- bx }
   q <- length(by)
 
-  ##### Test of IV-exposure assumption #####
-  p_het <- 1 - stats::pchisq(rma(xcoef_sub,
-    vi = (xcoef_sub_se)^2
-  )$QE,
-  df = (q - 1)
-  )
-  p_het_trend <- rma.uni(xcoef_sub ~ xmean,
-    vi = xcoef_sub_se^2,
-    method = method
-  )$pval[2]
 
   ##### Best-fitting fractional polynomial of degree 1 #####
   p <- NULL
@@ -998,22 +987,20 @@ if (!is.na(seed)) { set.seed(seed) }
     fp_d1_d2 = p_d1_d2, fp = p_fp,
     quad = p_quadratic, Q = p_q
   ))
-  p_heterogeneity <- as.matrix(data.frame(Q = p_het, trend = p_het_trend))
+
 
   if (fig == TRUE) {
     results <- list(
       n = NA, model = model, powers = powers,
       coefficients = coefficients, lace = lace,
-      xcoef = xcoef_quant, p_tests = p_tests,
-      p_heterogeneity = p_heterogeneity, figure = figure
+      xcoef = xcoef_quant, p_tests = p_tests, figure = figure
     )
   }
   if (fig == FALSE) {
     results <- list(
       n = NA, model = model, powers = powers,
       coefficients = coefficients, lace = lace,
-      xcoef = xcoef_quant, p_tests = p_tests,
-      p_heterogeneity = p_heterogeneity
+      xcoef = xcoef_quant, p_tests = p_tests
     )
   }
   class(results) <- "frac_poly_mr"

@@ -134,8 +134,6 @@ the p-value of the test between the fractional polynomial degrees (fp_d1_d2);
 the second column is the p-value from the fractional polynomial non-linearity
 test (fp); the third column is the p-value from the quadratic test (quad);
 the fourth column is the p-value from the Cochran Q test (Q).
-
-p_heterogeneity the p-value of heterogeneity.
 The first column is the p-value of the Cochran Q heterogeneity test (Q);
 the second column is the p-value from the trend test (trend).
 

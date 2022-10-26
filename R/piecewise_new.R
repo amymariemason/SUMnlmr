@@ -135,15 +135,6 @@ if (!is.na(seed)) { set.seed(seed) }
   coef <- frac_coef / xcoef
   coef_se <- frac_se / xcoef
 
-  ##### Test of IV-exposure assumption #####
-  p_het <- 1 - pchisq(rma(xcoef_sub, vi = (xcoef_sub_se)^2)$QE,
-    df = (q - 1)
-  )
-  p_het_trend <- rma.uni(xcoef_sub ~ xmean,
-    vi = xcoef_sub_se^2,
-    method = "DL"
-  )$pval[2]
-
   ##### Non-linearity tests #####
   p_quadratic <- rma(coef ~ xmean, (coef_se)^2,
     method = "FE"
@@ -241,14 +232,13 @@ if (!is.na(seed)) { set.seed(seed) }
   xcoef_quant <- as.matrix(data.frame(beta = xcoef_sub, se = xcoef_sub_se))
   rownames(xcoef_quant) <- seq_len(nrow(xcoef_quant))
   p_tests <- as.matrix(data.frame(quad = p_quadratic, Q = p_q))
-  p_heterogeneity <- as.matrix(data.frame(Q = p_het, trend = p_het_trend))
+
   if (fig == F) {
     results <- list(
       model = model,
       lace = lace,
       xcoef = xcoef_quant,
-      p_tests = p_tests,
-      p_heterogeneity = p_heterogeneity
+      p_tests = p_tests
     )
   } else {
     results <- list(
@@ -256,7 +246,6 @@ if (!is.na(seed)) { set.seed(seed) }
       lace = lace,
       xcoef = xcoef_quant,
       p_tests = p_tests,
-      p_heterogeneity = p_heterogeneity,
       figure = figure
     )
   }
@@ -531,13 +520,11 @@ summary.piecewise_summ_mr <- function(object, ...) {
   model <- as.data.frame(object$model)
   coefficients <- as.data.frame(object$lace)
   p_tests <- as.data.frame(object$p_tests)
-  p_heterogeneity <- as.data.frame(object$p_heterogeneity)
   if (is.null(object$figure)) {
     summ <- list(
       model = model,
       coefficients = coefficients,
-      p_tests = p_tests,
-      p_heterogeneity = p_heterogeneity
+      p_tests = p_tests
     )
   }
   if (!is.null(object$figure)) {
@@ -545,7 +532,6 @@ summary.piecewise_summ_mr <- function(object, ...) {
       model = model,
       coefficients = coefficients,
       p_tests = p_tests,
-      p_heterogeneity = p_heterogeneity,
       figure = object$figure
     )
   }
@@ -574,9 +560,6 @@ print.summary.piecewise_summ_mr <- function(x, ...) {
   cat("\nNon-linearity tests")
   cat("\nQuadratic p-value:", signif(x$p_tests$quad, digits = 3))
   cat("\nCochran Q p-value:", signif(x$p_tests$Q, digits = 3))
-  cat("\n\nHeterogeneity tests")
-  cat("\nCochran Q p-value:", signif(x$p_heterogeneity$Q, digits = 3))
-  cat("\nTrend p-value:", signif(x$p_heterogeneity$trend, digits = 3))
   cat("\n")
   if (!is.null(x$figure)) {
     plot(x$figure)
