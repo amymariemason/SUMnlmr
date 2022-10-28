@@ -150,19 +150,16 @@ summary.frac_poly_mr <- function(object, ...) {
     coefficients <- coefficients[, c(1, 3, 4)]
   }
   p_tests <- as.data.frame(object$p_tests)
-  p_heterogeneity <- as.data.frame(object$p_heterogeneity)
   if (is.null(object$figure)) {
     summ <- list(
       model = model, powers = powers, n = n,
-      coefficients = coefficients, p_tests = p_tests,
-      p_heterogeneity = p_heterogeneity
+      coefficients = coefficients, p_tests = p_tests
     )
   }
   if (!is.null(object$figure)) {
     summ <- list(
       model = model, powers = powers, n = n,
       coefficients = coefficients, p_tests = p_tests,
-      p_heterogeneity = p_heterogeneity,
       figure = object$figure
     )
   }
@@ -225,9 +222,6 @@ print.summary.frac_poly_mr <- function(x, ...) {
   )
   cat("\nQuadratic p-value:", signif(x$p_tests$quad, digits = 3))
   cat("\nCochran Q p-value:", signif(x$p_tests$Q, digits = 3))
-  cat("\n\nHeterogeneity tests")
-  cat("\nCochran Q p-value:", signif(x$p_heterogeneity$Q, digits = 3))
-  cat("\nTrend p-value:", signif(x$p_heterogeneity$trend, digits = 3))
   cat("\n")
   if (!is.null(x$figure)) {
     plot(x$figure)

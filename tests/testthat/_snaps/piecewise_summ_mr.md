@@ -22,10 +22,6 @@
     Non-linearity tests
     Quadratic p-value: 0.013
     Cochran Q p-value: 0.193
-    
-    Heterogeneity tests
-    Cochran Q p-value: 0
-    Trend p-value: 3.75e-19
 
 ---
 
@@ -55,10 +51,6 @@
     Non-linearity tests
     Quadratic p-value: 0.013
     Cochran Q p-value: 0.193
-    
-    Heterogeneity tests
-    Cochran Q p-value: 0
-    Trend p-value: 3.75e-19
 
 ---
 

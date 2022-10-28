@@ -38,6 +38,10 @@
 #' for the regressions
 #' @param report_GR This will add the Gelman-Rubin statistics for each strata
 #' to the output. Note this only works if strata_method="ranked".
+#' @param report_het This will add p-values for assessing the heterogeneity of
+#' the instrument - exposure relationship.
+#' The first column is the p-value of the Cochran Q heterogeneity test (Q);
+#' the second column is the p-value from the trend test (trend).
 #' @param seed The random seed to use when generating the quantiles (for reproducibility). If set to \code{NA}, the random seed will not be set.
 #' @return model the model specifications. The first column is the number of
 #' quantiles (q); the second column is the position used to relate x to the LACE
@@ -50,6 +54,8 @@
 #' @import matrixStats
 #' @importFrom dplyr mutate group_by row_number arrange
 #' @importFrom stats quantile
+#' @importFrom metafor rma
+#' @importFrom metafor rma.uni
 #' @export
 create_nlmr_summary <- function(y,
                                 x,
@@ -61,7 +67,9 @@ create_nlmr_summary <- function(y,
                                 strata_method="residual",
                                 strata_bound=c(0.2,0.1,0.8,0.9),
                                 extra_statistics =FALSE,
-                                report_GR=FALSE, seed=1234) {
+                                report_GR=FALSE,
+                                report_het=FALSE,
+                                seed=1234) {
 
   if( exists(".Random.seed") ) {
   old <- .Random.seed
@@ -218,9 +226,26 @@ if (is.na(model$coef[2])) {
   }
   if (strata_method=="ranked"){
     final_output_list[["GR_max"]]<- GR_stats[1]
+
+    ##### Test of IV-exposure assumption #####
+    xcoef_sub <- bx
+    xcoef_sub_se <- bxse
+    p_het <- 1 - pchisq(rma(xcoef_sub, vi = (xcoef_sub_se)^2)$QE,
+                        df = (q - 1)
+    )
+    p_het_trend <- rma.uni(xcoef_sub ~ xmean,
+                           vi = xcoef_sub_se^2,
+                           method = "DL"
+    )$pval[2]
+
   if (report_GR==TRUE){
     final_output_list[["GR_results"]]<-GR_stats
-  }}
+  }
+  if (report_het==TRUE){
+    p_heterogeneity <- as.matrix(data.frame(Q = p_het, trend = p_het_trend))
+    final_output_list[["Heterogeneity_results"]]<- p_heterogeneity
+  }
+    }
 
 
   # print(list(summary = head(output)))

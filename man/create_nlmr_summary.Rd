@@ -16,6 +16,7 @@ create_nlmr_summary(
   strata_bound = c(0.2, 0.1, 0.8, 0.9),
   extra_statistics = FALSE,
   report_GR = FALSE,
+  report_het = FALSE,
   seed = 1234
 )
 }
@@ -65,6 +66,11 @@ for the regressions}
 
 \item{report_GR}{This will add the Gelman-Rubin statistics for each strata
 to the output. Note this only works if strata_method="ranked".}
+
+\item{report_het}{This will add p-values for assessing the heterogeneity of
+the instrument - exposure relationship.
+The first column is the p-value of the Cochran Q heterogeneity test (Q);
+the second column is the p-value from the trend test (trend).}
 
 \item{seed}{The random seed to use when generating the quantiles (for reproducibility). If set to \code{NA}, the random seed will not be set.}
 }
