@@ -203,7 +203,7 @@ if (is.na(model$coef[2])) {
                    xmean = mean(x[x0q == j]),
                          ymin = quantile(y[x0q == j], 0),
                          ymax = quantile(y[x0q == j], 1),
-                         x_fstat = summary(model2)$fstatistic[1]
+                         x_fstat = (bx/bxse)^2
 
                    )
       strata_stats[[j]]<-append(strata_stats[[j]], stats)
