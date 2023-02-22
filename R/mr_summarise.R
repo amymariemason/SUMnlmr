@@ -89,11 +89,11 @@ if (!is.na(seed)) { set.seed(seed) }
   # coxph checks
   stopifnot(
     "y must be a Surv object with family coxph" = !(family=="coxph" &
-                                                           is.Surv(y))
+                                                           !is.Surv(y))
   )
   stopifnot(
     "cannot use controlsonly option with family coxph" = !(family=="coxph" &
-                                                      controlsonly=TRUE)
+                                                      controlsonly==TRUE)
   )
 
   # covar issue
@@ -110,11 +110,12 @@ if (!is.na(seed)) { set.seed(seed) }
 
 
   # calculate the iv-free association
-  if (family=="binomial" |family=="gaussian") {
+  if (family=="binomial" |family=="gaussian"| family=="coxph") {
   if (strata_method=="residual"){
+    family2= ifelse(family=="binomial", "binomial", "gaussian")
     ivf <- iv_free(
     y = y, x = x, g = g,
-    covar = covar, q = q, family = family, controlsonly=controlsonly
+    covar = covar, q = q, family = family2, controlsonly=controlsonly
   )
     x0q <- ivf$x0q
   } else if(strata_method=="ranked") {
@@ -136,7 +137,7 @@ if (!is.na(seed)) { set.seed(seed) }
     stop("strata ordering must be ranked or residual")
   }
   } else {
-    stop("family must be gaussian or binomial")
+    stop("family must be gaussian or binomial or coxph")
   }
 
 
