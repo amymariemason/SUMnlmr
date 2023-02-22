@@ -8,9 +8,10 @@
 #' @param g the instrumental variable.
 #' @param covar a matrix of covariates.
 #' @param family a description of the error distribution and link function to be used in the model.
-#' For piecewise_mr this can be a character string naming either the gaussian
-#' (i.e. "gaussian" for continuous data) or binomial (i.e. "binomial" for
-#' binary data) family function.
+#' This is a character string naming either the gaussian
+#' (i.e. "gaussian" for continuous outcome data) or binomial (i.e. "binomial" for
+#' binary outcome data) family function. "Coxph" can be used to fit survival data
+#' - in this case y must be a Surv object.
 #' @param controlsonly whether to estimate the gx association in all people,
 #' or in controls only. This is set to FALSE as default.
 #' It has no effect if family is set to "gaussian"
@@ -56,6 +57,8 @@
 #' @importFrom stats quantile
 #' @importFrom metafor rma
 #' @importFrom metafor rma.uni
+#' @importFrom survival coxph
+#' @importFrom survival is.Surv
 #' @export
 create_nlmr_summary <- function(y,
                                 x,
@@ -82,6 +85,15 @@ if (!is.na(seed)) { set.seed(seed) }
   stopifnot(
     "report_GR only works with strata_method ranked" = !(report_GR==TRUE &
                                                       strata_method!="ranked")
+  )
+  # coxph checks
+  stopifnot(
+    "y must be a Surv object with family coxph" = !(family=="coxph" &
+                                                           is.Surv(y))
+  )
+  stopifnot(
+    "cannot use controlsonly option with family coxph" = !(family=="coxph" &
+                                                      controlsonly=TRUE)
   )
 
   # covar issue
@@ -174,8 +186,29 @@ if (!is.na(seed)) { set.seed(seed) }
         } else {
           model2 <- lm(x[x0q == j] ~ g[x0q == j, drop = F] + covar[x0q == j, , drop = F])
           }
-        }
-    } else {
+      }
+      if (is.na(model$coef[2])) {
+        stop("the regression coefficient of the outcome on the instrument
+           in one of the quantiles is missing")
+      }
+      by[j] <- model$coef[2]
+      byse[j] <- summary(model)$coef[2, 2]
+    }else if(family == "coxph"){
+      if (is.null(covar)) {
+        model <- coxph(y[x0q == j] ~ g[x0q == j])
+        model2 <- lm(x[x0q == j] ~ g[x0q == j])
+      }else{
+        model <- coxph(y[x0q == j] ~ g[x0q == j] + covar[x0q == j, , drop = F])
+        model2 <- lm(x[x0q == j] ~ g[x0q == j, drop = F] + covar[x0q == j, , drop = F])
+      }
+      if (is.na(model$coef[1])) {
+        stop("the regression coefficient of the outcome on the instrument
+           in one of the quantiles is missing")
+      }
+      by[j] <- model$coef[1]
+      byse[j] <- summary(model)$coef[1, 3]
+
+    }else {
       if (is.null(covar)) {
         model <- lm(y[x0q == j] ~ g[x0q == j])
         model2 <- lm(x[x0q == j] ~ g[x0q == j])
@@ -183,14 +216,18 @@ if (!is.na(seed)) { set.seed(seed) }
         model <- lm(y[x0q == j] ~ g[x0q == j]+   covar[x0q == j, , drop = F])
         model2 <- lm(x[x0q == j] ~ g[x0q == j]+   covar[x0q == j, , drop = F])
       }
+      if (is.na(model$coef[2])) {
+        stop("the regression coefficient of the outcome on the instrument
+           in one of the quantiles is missing")
+      }
+      by[j] <- model$coef[2]
+      byse[j] <- summary(model)$coef[2, 2]
     }
 
-if (is.na(model$coef[2])) {
-      stop("the regression coefficient of the outcome on the instrument
+if (is.na(model2$coef[2])) {
+      stop("the regression coefficient of the exposure on the instrument
            in one of the quantiles is missing")
     }
-    by[j] <- model$coef[2]
-    byse[j] <- summary(model)$coef[2, 2]
 
        bx[j] <- model2$coef[2]
     bxse[j] <- summary(model2)$coef[2, 2]
@@ -203,7 +240,7 @@ if (is.na(model$coef[2])) {
                    xmean = mean(x[x0q == j]),
                          ymin = quantile(y[x0q == j], 0),
                          ymax = quantile(y[x0q == j], 1),
-                         x_fstat = (bx/bxse)^2
+                         x_fstat = (bx[j]/bxse[j])^2
 
                    )
       strata_stats[[j]]<-append(strata_stats[[j]], stats)
