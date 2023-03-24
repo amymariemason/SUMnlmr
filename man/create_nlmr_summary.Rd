@@ -30,9 +30,12 @@ create_nlmr_summary(
 \item{covar}{a matrix of covariates.}
 
 \item{family}{a description of the error distribution and link function to be used in the model.
-For piecewise_mr this can be a character string naming either the gaussian
-(i.e. "gaussian" for continuous data) or binomial (i.e. "binomial" for
-binary data) family function.}
+This is a character string naming either the gaussian
+(i.e. "gaussian" for continuous outcome data) or binomial (i.e. "binomial" for
+binary outcome data) family function. "Coxph" can be used to fit survival data
+\itemize{
+\item in this case y must be a Surv object.
+}}
 
 \item{controlsonly}{whether to estimate the gx association in all people,
 or in controls only. This is set to FALSE as default.

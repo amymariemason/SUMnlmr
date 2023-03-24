@@ -133,7 +133,7 @@ if (!is.na(seed)) { set.seed(seed) }
    else { xcoef <- bx }
   q <- length(by)
   coef <- frac_coef / xcoef
-  coef_se <- frac_se / xcoef
+  coef_se <- abs(frac_se / xcoef)
 
   ##### Non-linearity tests #####
   p_quadratic <- rma(coef ~ xmean, (coef_se)^2,
