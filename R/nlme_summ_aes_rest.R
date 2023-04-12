@@ -37,8 +37,9 @@ if (getRversion() >= "2.15.1") {
 #' @param fig a logical statement as to whether the user wants the results
 #' displayed in a figure. The default is false.
 #' @param family a character string named either \code{'gaussian'} (for
-#' continuous data) or binomial (for binary data) family function. This only
-#' affects the plotting function - whether the y-axis is log-transformed of not.
+#' continuous data) or binomial (for binary data) or cox (for survival data)
+#' family function. This only affects the plotting function - whether the y-axis
+#'  is log-transformed or not, and the graph's default label.
 #' @param offset offset on the x-axis (default is zero).
 #' @param pref_x the prefix/label for the x-axis. The default is 'x'.
 #' @param pref_y the prefix/label for the y-axis. The default is 'y'.
@@ -121,6 +122,26 @@ if (!is.na(seed)) { set.seed(seed) }
     stop("the confidence intervals must be one of \"model_se\",
          \"bootstrap_se\" and \"bootstrap_per\"")
   }
+
+  stopifnot(
+    "by is not numeric" = (is.numeric(by) | is.integer(by)),
+    "bx is not numeric" = (is.numeric(bx) | is.integer(bx)),
+    "byse is not numeric" = (is.numeric(byse) | is.integer(byse)),
+    "bxse is not numeric" = (is.numeric(bxse) | is.integer(bxse)),
+    "xmean is not numeric" = (is.numeric(xmean) | is.integer(xmean)),
+    "by is single value - cannot calculate multiple quantiles" =
+      length(by) > 1,
+    "difference number of observations for the outcome & exposure" =
+      length(by) == length(bx),
+    "missing by values" = !anyNA(by),
+    "missing bx values" = !anyNA(bx),
+    "missing byse values" = !anyNA(byse),
+    "missing bxse values" = !anyNA(bxse),
+    "missing xmean values" = !anyNA(xmean),
+    "family has to be either gaussian or binomial or cox" =
+      family %in% c("gaussian", "binomial", "cox")
+  )
+
   #### Start ###
   frac_coef <- by
   frac_se <- byse
@@ -622,7 +643,7 @@ if (!is.na(seed)) { set.seed(seed) }
       plot_data$x <- plot_data$x + offset
       plot_data_1$x <- plot_data_1$x + offset
       ref <- ref + offset
-      if (family != "binomial") {
+      if (family == "gaussian") {
         figure <- ggplot2::ggplot(plot_data, aes(x = x))
         figure <- figure +
           geom_hline(aes(yintercept = 0), colour = "grey") +
@@ -651,7 +672,10 @@ if (!is.na(seed)) { set.seed(seed) }
             scale_y_continuous(breaks = breaks))
         }
       }
-      if (family == "binomial") {
+      if (family == "binomial"|family=="cox") {
+        pref_y <- ifelse(family=="binomial",paste0("Odds ratio of ", pref_y),
+                         paste0("Hazard ratio of ", pref_y))
+
         plot_data$yest <- exp(plot_data$yest)
         plot_data$uci <- exp(plot_data$uci)
         plot_data$lci <- exp(plot_data$lci)
@@ -882,7 +906,7 @@ if (!is.na(seed)) { set.seed(seed) }
       highlight <- c("red", rep("black", (nrow(plot_data) - 1)))
       plot_data$x <- plot_data$x + offset
       plot_data_1$x <- plot_data_1$x + offset
-      if (family != "binomial") {
+      if (family == "gaussian") {
         figure <- ggplot2::ggplot(plot_data, aes(x = x))
         figure <- figure +
           geom_hline(aes(yintercept = 0), colour = "grey") +
@@ -911,7 +935,10 @@ if (!is.na(seed)) { set.seed(seed) }
           figure <- figure + scale_y_continuous(breaks = breaks)
         }
       }
-      if (family == "binomial") {
+      if (family == "binomial"|family=="cox") {
+        pref_y <- ifelse(family=="binomial",paste0("Odds ratio of ", pref_y),
+                         paste0("Hazard ratio of ", pref_y))
+
         plot_data$yest <- exp(plot_data$yest)
         plot_data$uci <- exp(plot_data$uci)
         plot_data$lci <- exp(plot_data$lci)
