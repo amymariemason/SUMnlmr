@@ -56,25 +56,26 @@ library(SUMnlmr)
 test_data<-create_ind_data(N=10000, beta2=2, beta1=1)
 # this creates quadratic.Y  = x + 2x^2 + errorY 
 head(test_data)
-#>   g          u     errorX     errorY        X   linear.Y quadratic.Y     sqrt.Y
-#> 1 0 0.08176809 0.33506643  0.7479011 2.416835  3.2301501   14.912328  2.3679328
-#> 2 0 0.05094785 0.04967857 -2.3376386 2.100626 -0.1962539    8.629009 -0.8475266
-#> 3 1 0.47509705 0.37975491  0.1741544 3.104852  3.6590840   22.939295  2.3162911
-#> 4 1 0.54009755 0.06044085 -0.9746320 2.850538  2.3079845   18.559123  1.1457998
-#> 5 0 0.26491080 1.07224939  0.1533780 3.337160  3.7024668   25.975743  2.1920962
-#> 6 1 0.18903041 2.52983035  1.9123808 4.968861  7.0324659   56.411620  4.2926993
+#>   g           u      errorX      errorY        X linear.Y quadratic.Y   sqrt.Y
+#> 1 0 0.855429126 0.281309187 -0.08097275 3.136738 3.740109    23.41836 2.374454
+#> 2 1 0.701815092 0.123178790  3.82412182 3.074994 7.460568    26.37174 6.139140
+#> 3 0 0.844505128 0.269158502 -1.22821961 3.113664 2.561048    21.95085 1.211942
+#> 4 0 0.894532484 1.062569070 -1.35964713 3.957102 3.313080    34.63039 1.345225
+#> 5 1 0.263973312 0.002066912 -0.18735766 2.516040 2.539861    15.20078 1.610024
+#> 6 0 0.001373215 0.502596895 -0.39162587 2.503970 2.113443    14.65318 1.191866
 #>       log.Y threshold.Y fracpoly.Y
-#> 1  1.695774   3.2301501   4.995067
-#> 2 -1.554645  -0.1962539   1.288217
-#> 3  1.687198   3.6590840   5.925016
-#> 4  0.504954   2.3079845   4.403000
-#> 5  1.570427   3.7024668   6.112707
-#> 6  3.666796   7.0324659  10.238847
+#> 1 1.7465541    3.740109   6.026476
+#> 2 5.5088768    7.460568   9.707174
+#> 3 0.5831845    2.561048   4.832648
+#> 4 0.7314907    3.313080   6.064104
+#> 5 0.9465073    2.539861   4.385234
+#> 6 0.5273502    2.113443   3.949198
 ```
 
 Then we use create_nlmr_summary to summarise it.
 
 ``` r
+
 ## create the summarized form
 ## 
 summ_data<-create_nlmr_summary(y = test_data$quadratic.Y,
@@ -82,23 +83,25 @@ summ_data<-create_nlmr_summary(y = test_data$quadratic.Y,
                                 g = test_data$g,
                                 covar = NULL,
                                 family = "gaussian",
+                                strata_method = "residual", 
                                 controlsonly = FALSE,
                                 q = 10)
 
 head(summ_data$summary)
 #>          bx       by        bxse       byse    xmean     xmin     xmax
-#> 1 0.2416460 2.621907 0.005469282 0.07992635 2.468141 2.303684 2.702574
-#> 2 0.2380237 2.953103 0.003021858 0.06259026 2.743192 2.537307 2.932261
-#> 3 0.2359926 3.000799 0.002688455 0.06213654 2.941619 2.744584 3.123951
-#> 4 0.2383464 3.220525 0.002288068 0.06001303 3.114386 2.925759 3.284940
-#> 5 0.2372240 3.399922 0.002456162 0.06396262 3.284897 3.094661 3.454451
-#> 6 0.2320859 3.535823 0.003024663 0.06594482 3.490322 3.278736 3.720013
+#> 1 0.2612326 2.896331 0.005904958 0.08345000 2.481251 2.310319 2.747010
+#> 2 0.2663879 3.294415 0.002944422 0.06201941 2.767439 2.545732 2.969957
+#> 3 0.2640439 3.553600 0.002562119 0.05966031 2.976237 2.757302 3.251028
+#> 4 0.2653565 3.624811 0.002238094 0.05932379 3.138063 2.928119 3.320145
+#> 5 0.2591934 3.819073 0.002752244 0.06177890 3.305293 3.093620 3.513066
+#> 6 0.2627541 3.941553 0.003134800 0.06980488 3.512222 3.299559 3.720750
 ```
 
 If we have co-variants we want to adjust for in our analysis, we need to
 include them at this stage.
 
 ``` r
+
 ## create the summarized form
 summ_covar<-create_nlmr_summary(y = test_data$quadratic.Y,
                                 x = test_data$X,
@@ -106,16 +109,17 @@ summ_covar<-create_nlmr_summary(y = test_data$quadratic.Y,
                                 covar = matrix(data=c(test_data$linear.Y,
                                                       test_data$sqrt.Y),ncol=2),
                                 family = "gaussian",
+                                strata_method = "residual", 
                                 q = 10)
 
 head(summ_covar$summary)
 #>            bx         by         bxse        byse    xmean     xmin     xmax
-#> 1 0.017039513 -1.5750884 2.030203e-03 0.298694492 3.535173 2.303684 7.250644
-#> 2 0.008085241 -0.5922459 2.734618e-04 0.020351214 2.981956 2.554048 2.882983
-#> 3 0.007665114 -0.5765070 1.650736e-04 0.012717338 3.186438 2.749049 5.580242
-#> 4 0.007849691 -0.6160094 1.218489e-04 0.009940171 3.300218 2.911292 3.411314
-#> 5 0.007581952 -0.6195833 9.975637e-05 0.008606957 3.516460 3.046373 5.344659
-#> 6 0.007733693 -0.6509976 8.643375e-05 0.007694611 3.690165 3.173837 5.190605
+#> 1 0.015781437 -1.3644384 2.005148e-03 0.287822215 3.559852 2.310319 7.267194
+#> 2 0.008905686 -0.6609827 2.640962e-04 0.019734263 3.093493 2.564498 6.009726
+#> 3 0.008488032 -0.6495883 1.741300e-04 0.013646519 3.191837 2.768207 3.238514
+#> 4 0.008330134 -0.6509645 1.148009e-04 0.009457052 3.385089 2.923985 5.544038
+#> 5 0.008205053 -0.6693591 1.003678e-04 0.008945053 3.511726 3.060263 5.304315
+#> 6 0.008172195 -0.6866536 8.233542e-05 0.007317054 3.703064 3.195215 5.171403
 ```
 
 Note: Because the covariants are included as a matrix, lm cannot detect
@@ -126,6 +130,7 @@ by hand instead using the
 command. e.g.
 
 ``` r
+
 ## create a factor
 test_data$centre<- as.factor(rbinom(nrow(test_data),4, 0.5))
 
@@ -141,16 +146,44 @@ summ_covar2<-create_nlmr_summary(y = test_data$quadratic.Y,
 
 head(summ_covar2$summary)
 #>          bx       by        bxse       byse    xmean     xmin     xmax
-#> 1 0.2407786 2.616141 0.005540450 0.08092276 2.469080 2.303684 2.705564
-#> 2 0.2353140 2.922645 0.003095423 0.06228917 2.741860 2.536890 2.937293
-#> 3 0.2359986 3.000720 0.002652564 0.06143892 2.944478 2.746460 3.142854
-#> 4 0.2374883 3.203621 0.002287410 0.06050652 3.112734 2.924474 3.292102
-#> 5 0.2368943 3.394541 0.002481766 0.06380754 3.284772 3.093927 3.462022
-#> 6 0.2313379 3.503267 0.002979733 0.06481999 3.490705 3.278736 3.720520
+#> 1 0.2625992 2.929787 0.005864756 0.08316279 2.481824 2.310319 2.751725
+#> 2 0.2688530 3.327042 0.002966458 0.06167005 2.771374 2.545798 2.991144
+#> 3 0.2663097 3.580529 0.002603635 0.05905983 2.971824 2.754185 3.234841
+#> 4 0.2641251 3.611746 0.002255262 0.05766441 3.137909 2.928976 3.340057
+#> 5 0.2584143 3.793547 0.002753630 0.06212523 3.305805 3.094169 3.534874
+#> 6 0.2619501 3.936336 0.003100198 0.06851265 3.512687 3.297890 3.729489
 ```
 
 These have used a single genetic variant count, but the method works
-identically with an genetic score function for g instead.
+identically with an genetic score function for g instead. Logistic or
+cox models in the G-Y relationship can be used by changing the family
+option - see details in the create_nlmr_summary function description.
+
+It is also possible to implement the doubly-ranked method described in
+Haodong’s paper
+<https://www.biorxiv.org/content/10.1101/2022.06.28.497930v1>
+
+``` r
+
+## create the summarized form with the doubly ranked method
+summ_ranked<-create_nlmr_summary(y = test_data$quadratic.Y,
+                                x = test_data$X,
+                                g = test_data$g,
+                                covar = matrix(data=c(test_data$linear.Y,
+                                                      test_data$sqrt.Y),ncol=2),
+                                family = "gaussian",
+                                strata_method = "ranked", 
+                                q = 10)
+
+head(summ_ranked$summary)
+#>             bx          by         bxse        byse    xmean     xmin     xmax
+#> 1 0.0004869989 -0.01923869 0.0002690294 0.009948987 2.581953 2.335009 2.972280
+#> 2 0.0003377920 -0.01997351 0.0002656399 0.011834028 2.813561 2.449981 3.197579
+#> 3 0.0004494079 -0.02682389 0.0002455037 0.012129435 2.994767 2.619846 3.382163
+#> 4 0.0005468781 -0.03636720 0.0002573097 0.014348202 3.168038 2.782659 3.568595
+#> 5 0.0009189976 -0.06091405 0.0002527573 0.015822903 3.347678 2.930980 3.787111
+#> 6 0.0013204857 -0.09580564 0.0002923330 0.020148560 3.545190 3.080969 4.055592
+```
 
 Once your data is in this format, the output data frame is all you need
 to share to fit the fractional polynomial or piecewise linear models
@@ -162,6 +195,7 @@ Your data needs to be in the semi-summarised form as shown above. We can
 then fit a fractional polynomial model:
 
 ``` r
+
 
 model<- with(summ_data$summary, frac_poly_summ_mr(bx=bx,
                   by=by, 
@@ -182,19 +216,15 @@ summary(model)
 #> 
 #> Coefficients:
 #>   Estimate Std. Error 95%CI Lower 95%CI Upper   p.value    
-#> 2 2.180494   0.016033    2.149069      2.2119 < 2.2e-16 ***
+#> 2 2.195465   0.014309    2.167419      2.2235 < 2.2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
 #> Non-linearity tests
-#> Fractional polynomial degree p-value: 0.0767
+#> Fractional polynomial degree p-value: 0.0671
 #> Fractional polynomial non-linearity p-value: 0
-#> Quadratic p-value: 1.21e-68
+#> Quadratic p-value: 4.23e-78
 #> Cochran Q p-value: 0
-#> 
-#> Heterogeneity tests
-#> Cochran Q p-value: 0.222
-#> Trend p-value: 0.308
 ```
 
 <img src="man/figures/README-example4-1.png" width="100%" /> This also
@@ -223,11 +253,10 @@ Q: Cochran Q heterogeneity test \* trend: trend test
 ``` r
 model$p_tests
 #>        fp_d1_d2 fp         quad Q
-#> [1,] 0.07673496  0 1.206234e-68 0
+#> [1,] 0.06706764  0 4.233668e-78 0
 
 model$p_heterogeneity
-#>              Q     trend
-#> [1,] 0.2215729 0.3076563
+#> NULL
 ```
 
 ## Example 3: Piecewise linear model
@@ -235,6 +264,7 @@ model$p_heterogeneity
 We can instead fit a piecewise linear model to the same summarised data
 
 ``` r
+
 model2 <-with(summ_data$summary, piecewise_summ_mr(by, bx, byse, bxse, xmean, xmin,xmax, 
                   ci="bootstrap_se",
                   nboot=1000, 
@@ -244,41 +274,32 @@ model2 <-with(summ_data$summary, piecewise_summ_mr(by, bx, byse, bxse, xmean, xm
 )
 
 summary(model2)
-#> $model
-#>    q nboot
-#> 1 10  1000
+#> Call: piecewise_summ_mr
+#>  Quantiles: 10; Number of bootstrap
+#>       replications: 1000
 #> 
-#> $coefficients
-#>        beta        se      lci      uci          pval
-#> 1  11.08331 0.3378643 10.43657 11.73006 2.469024e-247
-#> 2  12.48335 0.2645813 11.95457 13.01212  0.000000e+00
-#> 3  12.68496 0.2626633 12.16539 13.20454  0.000000e+00
-#> 4  13.61379 0.2536868 13.10883 14.11875  0.000000e+00
-#> 5  14.37213 0.2703825 13.84360 14.90067  0.000000e+00
-#> 6  14.94662 0.2787617 14.41625 15.47699  0.000000e+00
-#> 7  16.15416 0.3436795 15.49773 16.81059  0.000000e+00
-#> 8  16.86772 0.4702393 15.96058 17.77485 8.158853e-291
-#> 9  21.00741 0.7562974 19.49572 22.51909 2.339354e-163
-#> 10 28.62799 5.6943996 17.19522 40.06076  9.205857e-07
+#> LACE:
+#>    Estimate Std. Error 95%CI Lower 95%CI Upper   p.value    
+#> 1  11.08718    0.31945    10.44983      11.725 < 2.2e-16 ***
+#> 2  12.36698    0.23282    11.90098      12.833 < 2.2e-16 ***
+#> 3  13.45837    0.22595    13.00656      13.910 < 2.2e-16 ***
+#> 4  13.66015    0.22356    13.20526      14.115 < 2.2e-16 ***
+#> 5  14.73446    0.23835    14.26379      15.205 < 2.2e-16 ***
+#> 6  15.00092    0.26567    14.47399      15.528 < 2.2e-16 ***
+#> 7  16.26836    0.30873    15.64797      16.889 < 2.2e-16 ***
+#> 8  17.61759    0.42280    16.76284      18.472 < 2.2e-16 ***
+#> 9  19.73827    0.74605    18.28214      21.194 < 2.2e-16 ***
+#> 10 25.60207    5.53377    16.06703      35.137  1.42e-07 ***
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
-#> $p_tests
-#>           quad Q
-#> 1 1.206234e-68 0
-#> 
-#> $p_heterogeneity
-#>           Q     trend
-#> 1 0.2215729 0.4375517
-#> 
-#> $figure
+#> Non-linearity tests
+#> Quadratic p-value: 4.23e-78
+#> Cochran Q p-value: 0
 ```
 
-<img src="man/figures/README-plexample-1.png" width="100%" />
-
-    #> 
-    #> attr(,"class")
-    #> [1] "summary.piecewise_mr"
-
-Again the figure is a ggplot object and can be adjusted similarly.
+<img src="man/figures/README-plexample-1.png" width="100%" /> Again the
+figure is a ggplot object and can be adjusted similarly.
 
 ``` r
 plot2 <- model2$figure+ 
@@ -296,6 +317,7 @@ The functions above can also fit binary outcome data, via a generalised
 linear model.
 
 ``` r
+
 test_data$y.bin<-stats::rbinom(size=1, p=0.5, n=10000)
 
 # create summ data
@@ -323,21 +345,17 @@ summary(model3)
 #> 
 #> Number of individuals: NA; Quantiles: 10; 95%CI: Model based SEs
 #> 
-#> Powers: 0
+#> Powers: -1
 #> 
 #> Coefficients:
-#>   Estimate Std. Error 95%CI Lower 95%CI Upper p.value
-#> 0 -0.31433    0.49504    -1.28460      0.6559  0.5254
+#>    Estimate Std. Error 95%CI Lower 95%CI Upper p.value
+#> -1  0.75794    1.20972    -1.61311       3.129   0.531
 #> 
 #> Non-linearity tests
-#> Fractional polynomial degree p-value: 0.0639
-#> Fractional polynomial non-linearity p-value: 0.695
-#> Quadratic p-value: 0.147
-#> Cochran Q p-value: 0.11
-#> 
-#> Heterogeneity tests
-#> Cochran Q p-value: 0.0436
-#> Trend p-value: 0.00825
+#> Fractional polynomial degree p-value: 0.514
+#> Fractional polynomial non-linearity p-value: 0.603
+#> Quadratic p-value: 0.289
+#> Cochran Q p-value: 0.765
 ```
 
 <img src="man/figures/README-bin-1.png" width="100%" /> Not
@@ -350,6 +368,7 @@ can see a potentially non-linear trend in the univariate data, which
 becomes a clear linear trend once covariates are included.
 
 ``` r
+
 # fit piecewise linear model
 model4 <-with(LDL_CAD, piecewise_summ_mr(by, bx, byse, bxse, xmean, xmin,xmax, 
                   ci="bootstrap_se",
@@ -361,80 +380,67 @@ model4 <-with(LDL_CAD, piecewise_summ_mr(by, bx, byse, bxse, xmean, xmin,xmax,
 
 
 summary(model4)
-#> $model
-#>    q nboot
-#> 1 10  1000
+#> Call: piecewise_summ_mr
+#>  Quantiles: 10; Number of bootstrap
+#>       replications: 1000
 #> 
-#> $coefficients
-#>         beta         se         lci       uci         pval
-#> 1  0.4062614 0.05955269  0.29040412 0.5221187 6.292154e-12
-#> 2  0.3624422 0.07347687  0.21619444 0.5086899 1.189252e-06
-#> 3  0.3110766 0.08701566  0.13573948 0.4864137 5.063790e-04
-#> 4  0.2868202 0.09690730  0.09581614 0.4778243 3.248143e-03
-#> 5  0.1526631 0.10198090 -0.04952810 0.3548544 1.389040e-01
-#> 6  0.1413218 0.10542626 -0.06586389 0.3485075 1.812487e-01
-#> 7  0.1284211 0.10245230 -0.07419366 0.3310359 2.141312e-01
-#> 8  0.1911379 0.10494505 -0.01443476 0.3967106 6.839824e-02
-#> 9  0.2236501 0.10432433  0.02576157 0.4215386 2.674928e-02
-#> 10 0.2689869 0.09865336  0.08402228 0.4539516 4.367085e-03
+#> LACE:
+#>     Estimate Std. Error 95%CI Lower 95%CI Upper   p.value    
+#> 1   0.476044   0.069782    0.357660      0.5944 3.235e-15 ***
+#> 2   0.364945   0.073984    0.221357      0.5085 6.307e-07 ***
+#> 3   0.312283   0.087353    0.143253      0.4813 0.0002933 ***
+#> 4   0.287650   0.097188    0.100267      0.4750 0.0026230 ** 
+#> 5   0.152506   0.101876   -0.046648      0.3517 0.1333784    
+#> 6   0.141101   0.105261   -0.063092      0.3453 0.1756110    
+#> 7   0.127970   0.102092   -0.073201      0.3291 0.2124684    
+#> 8   0.189778   0.104199   -0.012174      0.3917 0.0654969 .  
+#> 9   0.221003   0.103089    0.013359      0.4286 0.0369692 *  
+#> 10  0.237997   0.087287    0.048577      0.4274 0.0137914 *  
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
-#> $p_tests
-#>        quad         Q
-#> 1 0.0129998 0.1926024
-#> 
-#> $p_heterogeneity
-#>   Q        trend
-#> 1 0 3.752917e-19
-#> 
-#> $figure
+#> Non-linearity tests
+#> Quadratic p-value: 0.00317
+#> Cochran Q p-value: 0.0631
 ```
 
 <img src="man/figures/README-bi2-1.png" width="100%" />
 
-    #> 
-    #> attr(,"class")
-    #> [1] "summary.piecewise_mr"
+``` r
 
 
-    # fit piecewise linear model
-    model5 <-with(LDL_CAD_covar,piecewise_summ_mr(by, bx, byse, bxse, xmean, xmin,xmax, 
-                      ci="bootstrap_se",
-                      nboot=1000, 
-                      fig=TRUE,
-                      family="gaussian",
-                      ci_fig="ribbon")
-    )
+# fit piecewise linear model
+model5 <-with(LDL_CAD_covar,piecewise_summ_mr(by, bx, byse, bxse, xmean, xmin,xmax, 
+                  ci="bootstrap_se",
+                  nboot=1000, 
+                  fig=TRUE,
+                  family="gaussian",
+                  ci_fig="ribbon")
+)
 
-    summary(model5)
-    #> $model
-    #>    q nboot
-    #> 1 10  1000
-    #> 
-    #> $coefficients
-    #>         beta         se        lci       uci         pval
-    #> 1  0.3076383 0.06286262 0.18784690 0.4274297 4.815824e-07
-    #> 2  0.2922888 0.07803988 0.13947353 0.4451040 1.776260e-04
-    #> 3  0.3579244 0.09154918 0.17641644 0.5394323 1.110801e-04
-    #> 4  0.2152398 0.10145750 0.01300243 0.4174772 3.697734e-02
-    #> 5  0.2541277 0.10625811 0.04861874 0.4596367 1.536366e-02
-    #> 6  0.4308538 0.10793986 0.22746563 0.6342421 3.295421e-05
-    #> 7  0.2584994 0.10687532 0.05409494 0.4629039 1.318595e-02
-    #> 8  0.2921218 0.10751727 0.08608339 0.4981601 5.454444e-03
-    #> 9  0.3296967 0.10623077 0.12599055 0.5334028 1.512660e-03
-    #> 10 0.3950466 0.10052968 0.19535186 0.5947414 1.055898e-04
-    #> 
-    #> $p_tests
-    #>        quad         Q
-    #> 1 0.5564354 0.9280444
-    #> 
-    #> $p_heterogeneity
-    #>   Q        trend
-    #> 1 0 5.974956e-19
-    #> 
-    #> $figure
+summary(model5)
+#> Call: piecewise_summ_mr
+#>  Quantiles: 10; Number of bootstrap
+#>       replications: 1000
+#> 
+#> LACE:
+#>    Estimate Std. Error 95%CI Lower 95%CI Upper   p.value    
+#> 1  0.362034   0.073978    0.237073      0.4870 1.359e-08 ***
+#> 2  0.295715   0.078955    0.143206      0.4482 0.0001444 ***
+#> 3  0.359511   0.091955    0.181675      0.5373 7.423e-05 ***
+#> 4  0.215239   0.101457    0.019063      0.4114 0.0315186 *  
+#> 5  0.253899   0.106162    0.046393      0.4614 0.0164756 *  
+#> 6  0.429836   0.107685    0.220769      0.6389 5.585e-05 ***
+#> 7  0.257262   0.106364    0.047407      0.4671 0.0162712 *  
+#> 8  0.290755   0.107014    0.083848      0.4977 0.0058822 ** 
+#> 9  0.326965   0.105351    0.115532      0.5384 0.0024375 ** 
+#> 10 0.349742   0.089001    0.156722      0.5428 0.0003832 ***
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> 
+#> Non-linearity tests
+#> Quadratic p-value: 0.959
+#> Cochran Q p-value: 0.934
+```
 
 <img src="man/figures/README-bi2-2.png" width="100%" />
-
-    #> 
-    #> attr(,"class")
-    #> [1] "summary.piecewise_mr"
