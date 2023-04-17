@@ -72,8 +72,9 @@ is 100 replications.}
 displayed in a figure. The default is false.}
 
 \item{family}{a character string named either \code{'gaussian'} (for
-continuous data) or binomial (for binary data) family function. This only
-affects the plotting function - whether the y-axis is log-transformed of not.}
+continuous data) or binomial (for binary data) or cox (for survival data)
+family function. This only affects the plotting function - whether the y-axis
+is log-transformed or not, and the graph's default label.}
 
 \item{offset}{offset on the x-axis (default is zero).}
 

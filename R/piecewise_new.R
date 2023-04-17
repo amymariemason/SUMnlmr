@@ -19,10 +19,11 @@
 #' @param xmin min value of the original exposure in each stratum (see note)
 #' @param xmax max value of the original exposure in each stratum (see note)
 #' @param xbreaks break points for the stratum x values (see note)
-#' @param family a description of the error distribution and link function to be
-#'  used in the model. This is a character string naming
-#'  either the gaussian (i.e. "gaussian" for continuous data) or binomial
-#'  (i.e. "binomial" for binary data) family function.
+#' @param family a character string named either \code{'gaussian'} (for
+#' continuous data) or binomial (for binary data) or cox (for survival data)
+#' family function. This only affects the plotting function - whether the y-axis
+#'  is log-transformed or not, and the graph's default label. This should match
+#'  whichever option was used in creating the summary data.
 #' @param average.exposure.associations TRUE means that the bx estimates are averaged across strata, FALSE means that they are not. Default option is FALSE.
 #' @param ci the type of 95\\% confidence interval. There are four options:
 #' (i) using the model standard errors ('model_se'), (ii) using bootstrap
@@ -98,10 +99,7 @@ if (!is.na(seed)) { set.seed(seed) }
 
   ##### Error messages #####
 
-  stopifnot(is.vector(by),
-    is.vector(bx),
-    is.vector(byse),
-    is.vector(bxse),
+  stopifnot(
     "by is not numeric" = (is.numeric(by) | is.integer(by)),
     "bx is not numeric" = (is.numeric(bx) | is.integer(bx)),
     "byse is not numeric" = (is.numeric(byse) | is.integer(byse)),
@@ -120,8 +118,8 @@ if (!is.na(seed)) { set.seed(seed) }
     "missing xmean values" = !anyNA(xmean),
     "missing xmin values" = !anyNA(xmin),
     "missing xmax values" = !anyNA(xmax),
-    "family has to be either gaussian or binomial" =
-      family %in% c("gaussian", "binomial")
+    "family has to be either gaussian or binomial or cox" =
+      family %in% c("gaussian", "binomial", "cox")
   )
 
   ##### define variables #######
@@ -386,7 +384,7 @@ piecewise_summ_figure <- function(xcoef, coef,
 
 
   ##### Figure#####
-  if (family != "binomial") {
+  if (family == "gaussian") {
     # collect data
 
     plot_data <- data.frame(
@@ -443,9 +441,10 @@ piecewise_summ_figure <- function(xcoef, coef,
     if (!is.null(breaks)) {
       figure <- figure + scale_y_continuous(breaks = breaks)
     }
-  } else {
+  } else if(family=="binomial"|family=="cox") {
     # collect data
-    pref_y <- paste0("Odds ratio of ", pref_y)
+    pref_y <- ifelse(family=="binomial",paste0("Odds ratio of ", pref_y),
+                     paste0("Hazard ratio of ", pref_y))
     plot_data <- data.frame(
       x = m, y = exp(y_mm_ref), y_lci = exp(lci_mm_ref),
       y_uci = exp(uci_mm_ref)

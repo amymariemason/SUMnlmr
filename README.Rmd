@@ -80,6 +80,7 @@ summ_data<-create_nlmr_summary(y = test_data$quadratic.Y,
                                 g = test_data$g,
                                 covar = NULL,
                                 family = "gaussian",
+                                strata_method = "residual", 
                                 controlsonly = FALSE,
                                 q = 10)
 
@@ -97,6 +98,7 @@ summ_covar<-create_nlmr_summary(y = test_data$quadratic.Y,
                                 covar = matrix(data=c(test_data$linear.Y,
                                                       test_data$sqrt.Y),ncol=2),
                                 family = "gaussian",
+                                strata_method = "residual", 
                                 q = 10)
 
 head(summ_covar$summary)
@@ -126,7 +128,25 @@ head(summ_covar2$summary)
 ```
 
 These have used a single genetic variant count, but the method works identically 
-with an genetic score function for g instead. 
+with an genetic score function for g instead. Logistic or cox models in the G-Y relationship can be used by changing the family option - see details in the create_nlmr_summary function description.  
+
+It is also possible to implement the doubly-ranked method described in Haodong's paper https://www.biorxiv.org/content/10.1101/2022.06.28.497930v1 
+
+
+```{r example3c}
+
+## create the summarized form with the doubly ranked method
+summ_ranked<-create_nlmr_summary(y = test_data$quadratic.Y,
+                                x = test_data$X,
+                                g = test_data$g,
+                                covar = matrix(data=c(test_data$linear.Y,
+                                                      test_data$sqrt.Y),ncol=2),
+                                family = "gaussian",
+                                strata_method = "ranked", 
+                                q = 10)
+
+head(summ_ranked$summary)
+```
 
 Once your data is in this format, the output data frame is all you need to share
 to fit the fractional polynomial or piecewise linear models onto the data.

@@ -46,10 +46,11 @@ piecewise_summ_mr(
 
 \item{xbreaks}{break points for the stratum x values (see note)}
 
-\item{family}{a description of the error distribution and link function to be
-used in the model. This is a character string naming
-either the gaussian (i.e. "gaussian" for continuous data) or binomial
-(i.e. "binomial" for binary data) family function.}
+\item{family}{a character string named either \code{'gaussian'} (for
+continuous data) or binomial (for binary data) or cox (for survival data)
+family function. This only affects the plotting function - whether the y-axis
+is log-transformed or not, and the graph's default label. This should match
+whichever option was used in creating the summary data.}
 
 \item{average.exposure.associations}{TRUE means that the bx estimates are averaged across strata, FALSE means that they are not. Default option is FALSE.}
 
