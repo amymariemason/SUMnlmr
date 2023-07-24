@@ -12,7 +12,7 @@ create_nlmr_summary(
   family = "gaussian",
   controlsonly = FALSE,
   q,
-  strata_method = "residual",
+  strata_method = "ranked",
   strata_bound = c(0.2, 0.1, 0.8, 0.9),
   extra_statistics = FALSE,
   report_GR = FALSE,
@@ -47,9 +47,11 @@ localised average causal effect (LACE). The default is deciles (i.e. 10
 quantiles).}
 
 \item{strata_method}{what method to use for determining strata. By default
-this is set to "residual", determining the strata from the residual of the
+this is set to "ranked", using Haodong Tian's double ranked version to calculate
+strata. The alternative is "residual" for determining the strata from the residual of the
 exposure regressed on the instrument (As in Statley and Burgess paper). The
-alternate is "ranked" for Haodong Tian's double ranked version.}
+residual method relies on a constant relationship between the instrument and the
+exposure across the range of the exposure.}
 
 \item{strata_bound}{controls what range to use for the LACE estimates in graphs display.
 By default this is set to restricted, taking the 10th and 90th percentile of
