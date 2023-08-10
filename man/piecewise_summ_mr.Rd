@@ -81,7 +81,7 @@ The default is "x".}
 \item{breaks}{breaks on the y-axis of the figure.}
 
 \item{ci_fig}{setting confidence interval type. "point" places error bars
-at the mean of each stratum; "line" draws upper and lower piecewise lines.}
+at the mean of each stratum; "ribbon" draws upper and lower piecewise lines.}
 
 \item{seed}{The random seed to use when generating the bootstrap samples (for reproducibility). If set to \code{NA}, the random seed will not be set.}
 }

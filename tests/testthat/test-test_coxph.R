@@ -14,7 +14,8 @@ test_that("throws errors if not Surv format", {
                                    g = test_data$g,
                                    covar = as.matrix(test_data$linear.Y, ncol=1),
                                    family = "coxph",
-                                   q = 10))
+                                   q = 10,
+                                   strata_method="residual"))
 })
 
 test_that("throws errors if coxph & controls only", {
@@ -29,7 +30,8 @@ test_that("throws errors if coxph & controls only", {
                                    covar = as.matrix(test_data$linear.Y, ncol=1),
                                    family = "coxph",
                                    controlsonly = TRUE,
-                                   q = 10))
+                                   q = 10,
+                                   strata_method="residual"))
 })
 
 
@@ -45,6 +47,7 @@ test_that("coxph method running", {
                                              g = test_data$g,
                                              covar = as.matrix(test_data$linear.Y, ncol=1),
                                              family = "coxph",
-                                             q = 10)$summary)
+                                             q = 10,
+                                             strata_method="residual")$summary)
 
 })

@@ -44,7 +44,7 @@
 #' @param pref_y the prefix/label for the y-axis. The default is "y".
 #' @param breaks breaks on the y-axis of the figure.
 #' @param ci_fig setting confidence interval type. "point" places error bars
-#' at the mean of each stratum; "line" draws upper and lower piecewise lines.
+#' at the mean of each stratum; "ribbon" draws upper and lower piecewise lines.
 #' @param seed The random seed to use when generating the bootstrap samples (for reproducibility). If set to \code{NA}, the random seed will not be set.
 #' @note The min and max of x stratum values are used to choose the appropiete
 #' range for fitting of each causal estimate. In the code for summarising data,
