@@ -139,7 +139,7 @@ if (!is.na(seed)) { set.seed(seed) }
   )$pval[2]
   p_q <- 1 - pchisq(rma(coef, vi = (coef_se)^2)$QE, df = (q - 1))
 
-  ##### Confidence Inteval ####
+  ##### Confidence Interval ####
   if (ci == "bootstrap_per" | ci == "bootstrap_se") {
     boot_coef <- data.frame(matrix(ncol = q, nrow = nboot))
     for (i in 1:nboot) {
@@ -221,7 +221,7 @@ if (!is.na(seed)) { set.seed(seed) }
   model <- as.matrix(data.frame(q = q, nboot = nboot))
   lace <- as.matrix(data.frame(
     beta = coef,
-    se = coef_se,
+    se = se,
     lci = lci,
     uci = uci,
     pval = pval

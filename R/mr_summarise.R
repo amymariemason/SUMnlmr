@@ -19,6 +19,16 @@
 #' into. Within each quantile a causal effect will be fitted, known as a
 #' localised average causal effect (LACE). The default is deciles (i.e. 10
 #' quantiles).
+#' @param prestrat the proportional size of pre-strata in the doubly-ranked
+#' method. If prestrat = 1 (default), then pre-strata will contain
+#' the number of individuals equal to the number of strata, and 1 individual
+#' from each pre-stratum is selected into each stratum. If prestrat = 10, then
+#' pre-strata contain 10 times the number of individuals as the number of
+#' strata, and 10 individuals from each pre-stratum are selected into each
+#' stratum. Larger pre-strata can improve the differentiation between
+#' pre-strata, although if pre-strata are too large such that the instrument
+#' values vary strongly within pre-strata, then the benefit of the doubly-ranked
+#' method is lost.
 #' @param strata_method what method to use for determining strata. By default
 #' this is set to "ranked", using Haodong Tian's double ranked version to calculate
 #' strata. The alternative is "residual" for determining the strata from the residual of the
@@ -69,6 +79,7 @@ create_nlmr_summary <- function(y,
                                 family = "gaussian",
                                 controlsonly=FALSE,
                                 q,
+                                prestrat=1,
                                 strata_method="ranked",
                                 strata_bound=c(0.2,0.1,0.8,0.9),
                                 extra_statistics =FALSE,
@@ -123,7 +134,7 @@ if (!is.na(seed)) { set.seed(seed) }
   } else if(strata_method=="ranked") {
     # haodong ranked strata method
     z = rank(g, ties.method = "random")
-    strata1 = floor((z-1)/q)+1
+    strata1 = floor((z-1)/q/prestrat)+1
     # check GR statistic
     GR_stats<-getGRvalues(X=x, Zstratum=strata1)
 
@@ -131,7 +142,7 @@ if (!is.na(seed)) { set.seed(seed) }
     temp<- data.frame(x=x,strata1=strata1,id=id, g=g)
     temp<- arrange(.data=temp, x)
     temp<-group_by(.data=temp, strata1)
-    temp<-mutate(.data=temp, x0q= rank(x, ties.method = "random"))
+    temp<-mutate(.data=temp, x0q= ceiling(rank(x, ties.method = "random")/prestrat))
     temp<-arrange(.data=temp, id)
 
     x0q <- temp$x0q
