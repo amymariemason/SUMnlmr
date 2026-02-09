@@ -3,10 +3,48 @@
 #' @description create_nlmr_summary takes individual level data and creates summerised
 #' dataset, ready to save and share for summarised nlmr
 #'
+#' @details
+#' ## Stratification model
+#'
+#' Given vectors of an exposure `x`, an outcome `y` and a instrument `g`, as well as two
+#' matrices of covariates `E` and `F`, which may be overlapping. This package implements
+#' several possible models for stratifying over the exposure value.
+#' The simplest of these the residual method, where we regress `x` on the genetic
+#' instrument and the covariate matrix `E`
+#' \deqn{x = \beta_0 + \beta_g g + \beta_E E}
+#' where `\beta_E` is a suitable vector of coefficients, and calculate the residual value
+#' \deqn{x_{resid} = x- \beta_0 + \beta_g G + \beta_E E}
+#' Once the strata are formed, the genetic associations with `x` and `y` are calculated,
+#' including the covariates matrix E e.g.
+#' \deqn{x = \beta_1 + \beta_x g + \beta_{E1} E}
+#' \deqn{y = \beta_2 + \beta_y g + \beta_{E2} E}
+#' with \eqn{beta_x} and \eqn{beta_y} returned for each strata.
+#' This method performs poorly and is not recommended. See (Steve ref).
+#' The second option is "ranked", using Haodong Tian's double ranked version to calculate
+#' strata. See (Haodong ref) for more details on this calculation. This has been shown
+#' to perform poorly when there is a GxE interaction. (Bristol ref, Ang ref)
+#' The final method that can be fit is Ang's GxE correction method, where the residual
+#' is recalculated using the second matrix of covariants, passed using the `interaction` input.
+#' \deqn{x = \beta_0 + \beta_g g + \beta_F F \beta_{g \times F} g \times F}
+#' The residual value of this equation is used to form strata. However within the strata,
+#' the associations are calculated using the usual covariance matrix E e.g.
+#' \deqn{x = \beta_1 + \beta_x g + \beta_{E1} E}
+#' \deqn{y = \beta_2 + \beta_y g + \beta_{E2} E}
+#'
+#' The two matrices are used to allow the greatest flexibility in choice of models for
+#' correcting potential GxE interactions.
+#'
+#' This is detailed in Zhou et al's paper (insert reference here)
+#'
+#'
 #' @param y vector of outcome values.
 #' @param x vector of exposure values.
 #' @param g the instrumental variable.
-#' @param covar a matrix of covariates.
+#' @param covar an optional matrix of covariates used to derive the stratification and the genetic associations.
+#' If `interactive` is also provided, then these are only used in the genetic association calculation.
+#' @param interaction an optional matrix of covariates used to derive the stratification only. See details.
+#' @param strata_number an optional numeric vector used to superceed the stratification calculation.
+#' Only use this if you have precalculated the strata and just want the genetic associations within those strata.
 #' @param family a description of the error distribution and link function to be used in the model.
 #' This is a character string naming either the gaussian
 #' (i.e. "gaussian" for continuous outcome data) or binomial (i.e. "binomial" for
@@ -76,6 +114,8 @@ create_nlmr_summary <- function(y,
                                 x,
                                 g,
                                 covar = NULL,
+                                interaction=NULL,
+                                strata_number=NULL,
                                 family = "gaussian",
                                 controlsonly=FALSE,
                                 q,
