@@ -4,7 +4,7 @@
 #' dataset, ready to save and share for summarised nlmr
 #'
 #' @details
-#' ## Stratification model
+#' ## Stratification models
 #'
 #' Given vectors of an exposure `x`, an outcome `y` and a instrument `g`, as well as two
 #' matrices of covariates `E` and `F`, which may be overlapping. This package implements
@@ -19,22 +19,30 @@
 #' \deqn{x = \beta_1 + \beta_x g + \beta_{E1} E}
 #' \deqn{y = \beta_2 + \beta_y g + \beta_{E2} E}
 #' with \eqn{beta_x} and \eqn{beta_y} returned for each strata.
-#' This method performs poorly and is not recommended. See (Steve ref).
+#' This method performs poorly unless the genetic effects on the exposure are constant.
+#' This assumption is often implausible, and thus this approach is not recommended.
+#' See Burgess, 2023 <doi:https://doi.org/10.1159/000531659>.
+#'
 #' The second option is "ranked", using Haodong Tian's double ranked version to calculate
-#' strata. See (Haodong ref) for more details on this calculation. This has been shown
-#' to perform poorly when there is a GxE interaction. (Bristol ref, Ang ref)
-#' The final method that can be fit is Ang's GxE correction method, where the residual
+#' strata. See Haodong et al, 2022 <doi: https://doi.org/10.1101/2022.06.28.497930> for more details on this calculation.
+#' However, there are concerns about this method's application, particularly in UK Biobank,
+#' with thanks to Hamiliton et al, 2023 <doi: https://doi.org/10.1007/s10654-024-01113-9> for their
+#' examples of this. In particular, this method performs poorly when there is a
+#' GxE interaction, as explained in Zhao et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.26344640>
+#'
+#' The final method that can be fit is Ang's GxE correction method, as detailed in
+#' Zhao et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.26344640> where the residual
 #' is recalculated using the second matrix of covariants, passed using the `interaction` input.
-#' \deqn{x = \beta_0 + \beta_g g + \beta_F F \beta_{g \times F} g \times F}
+#' \deqn{x = \beta_0 + \beta_g g + \beta_F F + \beta_{g \times F} g \times F}
 #' The residual value of this equation is used to form strata. However within the strata,
-#' the associations are calculated using the usual covariance matrix E e.g.
+#' the associations are calculated using the usual covariants matrix E e.g.
 #' \deqn{x = \beta_1 + \beta_x g + \beta_{E1} E}
 #' \deqn{y = \beta_2 + \beta_y g + \beta_{E2} E}
+#' with \eqn{beta_x} and \eqn{beta_y} returned for each strata.
 #'
-#' The two matrices are used to allow the greatest flexibility in choice of models for
-#' correcting potential GxE interactions.
+#' The two matrices supplied in `covar` and `interaction` are used to allow the
+#' greatest flexibility in choice of models for correcting potential GxE interactions.
 #'
-#' This is detailed in Zhou et al's paper (insert reference here)
 #'
 #'
 #' @param y vector of outcome values.
@@ -43,22 +51,32 @@
 #' @param covar an optional matrix of covariates used to derive the stratification and the genetic associations.
 #' If `interactive` is also provided, then these are only used in the genetic association calculation.
 #' @param interaction an optional matrix of covariates used to derive the stratification only. See details.
-#' @param strata_number an optional numeric vector used to superceed the stratification calculation.
+#' @param strata_method what method to use for determining strata. By default
+#' this is set to "ranked", using Haodong Tian's double ranked version to calculate
+#' strata. The alternative is "residual" for determining the strata from the residual of the
+#' exposure regressed on the instrument (As in Statley and Burgess paper). The
+#' residual method relies on a constant relationship between the instrument and the
+#' exposure across the range of the exposure.
+#' @param x_strata an optional numeric vector used to superceed the stratification calculation.
 #' Only use this if you have precalculated the strata and just want the genetic associations within those strata.
-#' @param family a description of the error distribution and link function to be used in the model.
-#' This is a character string naming either the gaussian
-#' (i.e. "gaussian" for continuous outcome data) or binomial (i.e. "binomial" for
-#' binary outcome data) family function. "Coxph" can be used to fit survival data
-#' - in this case y must be a Surv object.
-#' @param controlsonly whether to estimate the gx association in all people,
-#' or in controls only. This is set to FALSE as default.
-#' It has no effect if family is set to "gaussian"
 #' @param q the number of quantiles the exposure distribution is to be split
 #' into. Within each quantile a causal effect will be fitted, known as a
 #' localised average causal effect (LACE). The default is deciles (i.e. 10
 #' quantiles).
-#' @param prestrat the proportional size of pre-strata in the doubly-ranked
-#' method. If prestrat = 1 (default), then pre-strata will contain
+#' @param family a description of the error distribution and link function to be
+#' used in the model. It must be one of "gaussian", "binomial" or "coxph".
+#' Gaussian should be used for continuous outcome data and will fit linear
+#' regression models. Binomial should be used to fit logistic regression models to
+#' binary outcome data. Coxph should be used to fit will fit binary outcome
+#' This is a character string naming either the "gaussian"
+#' (i.e. "gaussian" for continuous outcome data) or binomial (i.e. "binomial" for
+#' binary outcome data) family function. "Coxph" can be used to fit survival data
+#' - in this case y must be a Surv object.
+#' @param controlsonly Only applied if family is "binomial" or "Coxph".
+#' If true, the genetic association with x is only calculated in the controls only.
+#' @param prestrat Only applied if method is "ranked".
+#' The proportional size of pre-strata in the doubly-ranked method.
+#' If prestrat = 1 (default), then pre-strata will contain
 #' the number of individuals equal to the number of strata, and 1 individual
 #' from each pre-stratum is selected into each stratum. If prestrat = 10, then
 #' pre-strata contain 10 times the number of individuals as the number of
@@ -67,28 +85,21 @@
 #' pre-strata, although if pre-strata are too large such that the instrument
 #' values vary strongly within pre-strata, then the benefit of the doubly-ranked
 #' method is lost.
-#' @param strata_method what method to use for determining strata. By default
-#' this is set to "ranked", using Haodong Tian's double ranked version to calculate
-#' strata. The alternative is "residual" for determining the strata from the residual of the
-#' exposure regressed on the instrument (As in Statley and Burgess paper). The
-#' residual method relies on a constant relationship between the instrument and the
-#' exposure across the range of the exposure.
-#' @param strata_bound controls what range to use for the LACE estimates in graphs display.
-#' By default this is set to restricted, taking the 10th and 90th percentile of
-#' internal strata and the 20th and 80th for the bottom of the lowest strata and
-#' top of the highest strata. It is a vector taking the percentiles for the
-#' lowers bounds of the bottom and then other strata and then upper bounds of
-#' top and other strata.
-#' This only impacts the "max" and "min" values for the summary table
-#' This can be overridden in piecewise_summ_mr by using the xbreaks argument to
-#' hardset different breakpoints or replacing default with c(0,0,1,1) to return
-#' to true max and minimum
+#' @param strata_bound This controls what range to use for the LACE estimates in
+#' graphs display. By default, this is taken conservatively with the 10th and
+#' 90th percentile of internal strata and the 20th and 80th for the bottom of the
+#' lowest strata and top of the highest strata. It is supplied as a vector of percentiles
+#' (lower bottom strata, lower other, higher top strata, higher other).
+#' This only impacts the "max" and "min" values for the summary table.
+#' This can be overridden in `piecewise_summ_mr()` by using the `xbreaks` argument to
+#' hardset different breakpoints or replacing default with `c(0,0,1,1)` to return
+#' to true max and minimums.
 #' @param extra_statistics This will add a second output reporting extra
 #' statistics for each strata. These include the true max and min of each
 #' strata (regardless of strata_bound setting) and the f statistic and p-value
-#' for the regressions
+#' for the regressions.
 #' @param report_GR This will add the Gelman-Rubin statistics for each strata
-#' to the output. Note this only works if strata_method="ranked".
+#' to the output. Note this only works if the strata method is "ranked".
 #' @param report_het This will add p-values for assessing the heterogeneity of
 #' the instrument - exposure relationship.
 #' The first column is the p-value of the Cochran Q heterogeneity test (Q);
@@ -100,7 +111,7 @@
 #'  interval constructed (ci); the fourth column is the number of bootstrap
 #'  replications performed (nboot).
 
-#' @author Amy Mason, leaning heavily on work by James Statley and Matt Arnold
+#' @author Amy Mason
 #' @import ggplot2
 #' @import matrixStats
 #' @importFrom dplyr mutate group_by row_number arrange
@@ -115,12 +126,12 @@ create_nlmr_summary <- function(y,
                                 g,
                                 covar = NULL,
                                 interaction=NULL,
-                                strata_number=NULL,
+                                strata_method="ranked",
+                                x_strata=NULL,
                                 family = "gaussian",
                                 controlsonly=FALSE,
-                                q,
+                                q=10,
                                 prestrat=1,
-                                strata_method="ranked",
                                 strata_bound=c(0.2,0.1,0.8,0.9),
                                 extra_statistics =FALSE,
                                 report_GR=FALSE,
@@ -133,23 +144,15 @@ create_nlmr_summary <- function(y,
 }
 if (!is.na(seed)) { set.seed(seed) }
 
-
-  # checks
+##################### in put checks
+  # checks on method choice
   stopifnot(
     "report_GR only works with strata_method ranked" = !(report_GR==TRUE &
                                                       strata_method!="ranked")
   )
-  # coxph checks
-  stopifnot(
-    "y must be a Surv object with family coxph" = !(family=="coxph" &
-                                                           !is.Surv(y))
-  )
-  stopifnot(
-    "cannot use controlsonly option with family coxph" = !(family=="coxph" &
-                                                      controlsonly==TRUE)
-  )
+  stopifnot("family must be one of gaussian, binomial or coxph")
 
-  # covar issue
+    # covar entry issue
   if (!is.null(covar) & !(is.matrix(covar) & is.numeric(covar))) {
     warning("covariates should be entered as numeric matrix:
             attempting to covert", immediate.=TRUE)
@@ -160,12 +163,43 @@ if (!is.na(seed)) { set.seed(seed) }
     covar<-as.matrix(covar2)
 
   }
+  # interaction entry issue
+  if (!is.null(interaction) & !(is.matrix(interaction) & is.numeric(interaction))) {
+    warning("covariates should be entered as numeric matrix:
+            attempting to covert", immediate.=TRUE)
+    interaction2<-model.matrix(~.,data=as.data.frame(interaction), na.action=na.pass)[,-1]
+    print(head(interaction2))
+    user_input <- readline("Do you want to run using this matrix for interaction terms (y/n) ")
+    if(user_input != 'y') stop('Exiting since you did not press y')
+    interaction<-as.matrix(interaction2)
+
+  }
+
+  # data entry check
+  stopifnot("y must be same length as x" = length(y) == length(x))
+  stopifnot("g must be same length as x" = length(g) == length(x))
+  stopifnot("covar must have same number of rows  as x" = is.null(covar) ||nrow(covar) == length(x))
+  stopifnot("interaction must have same number of rows as x" = is.null(interaction) ||nrow(interaction) == length(x))
+  stopifnot("xs must be same length as x" = is.null(xs) || length(xs) == length(x))
+
+  # coxph checks
+  stopifnot(
+    "y must be a Surv object with family coxph" = !(family=="coxph" &
+                                                      !is.Surv(y))
+  )
+  stopifnot(
+    "cannot use controlsonly option with family coxph" = !(family=="coxph" &
+                                                             controlsonly==TRUE)
+  )
+
+###################################### start of function
+
+  #create strata
 
 
   # calculate the iv-free association
-  if (family=="binomial" |family=="gaussian"| family=="coxph") {
   if (strata_method=="residual"){
-    family2= ifelse(family=="binomial", "binomial", "gaussian")
+    family2= ifelse(family %in% c("binomial","coxph"), "binomial", "gaussian")
     ivf <- iv_free(
     y = y, x = x, g = g,
     covar = covar, q = q, family = family2, controlsonly=controlsonly
@@ -189,9 +223,7 @@ if (!is.na(seed)) { set.seed(seed) }
   } else {
     stop("strata ordering must be ranked or residual")
   }
-  } else {
-    stop("family must be gaussian or binomial or coxph")
-  }
+
 
 
   quant <- q
