@@ -6,10 +6,12 @@
 #' @details
 #' ## Stratification models
 #'
-#' Given vectors of an exposure `x`, an outcome `y` and a instrument `g`, as well as two
-#' matrices of covariates `E` and `F`, which may be overlapping. This package implements
+#' Given vectors of an exposure `x`, an outcome `y` and a instrument `g`, as well as a
+#' matrices of covariates `E`. This package implements
 #' several possible models for stratifying over the exposure value.
-#' The simplest of these the residual method, where we regress `x` on the genetic
+#'
+#' The simplest of these the residual method, as described in Statley and Burgess,
+#' 2017 <doi:https://doi.org/10.1002/gepi.22041>.  where we regress `x` on the genetic
 #' instrument and the covariate matrix `E`
 #' \deqn{x = \beta_0 + \beta_g g + \beta_E E}
 #' where `\beta_E` is a suitable vector of coefficients, and calculate the residual value
@@ -30,35 +32,42 @@
 #' examples of this. In particular, this method performs poorly when there is a
 #' GxE interaction, as explained in Zhao et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.26344640>
 #'
-#' The final method that can be fit is Ang's GxE correction method, as detailed in
-#' Zhao et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.26344640> where the residual
-#' is recalculated using the second matrix of covariants, passed using the `interaction` input.
-#' \deqn{x = \beta_0 + \beta_g g + \beta_F F + \beta_{g \times F} g \times F}
-#' The residual value of this equation is used to form strata. However within the strata,
-#' the associations are calculated using the usual covariants matrix E e.g.
+#' The final method "interaction" that can be fit is Ang Zhao's GxE correction method,
+#' as detailed in Zhao et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.26344640>
+#' where the residual #' is recalculated using two additional matrix of covariants,
+#' passed using the `gxe_covar` (F) and `gxe_interaction` (H).
+#' \deqn{x = \beta_0 + \beta_g g + \beta_{F} F + \beta_{g \times H} g \times H}
+#' The residual value of this equation is used to form strata using the ranked method.
+#' However within the strata, #' the associations are calculated using the usual
+#' covariants matrix E e.g.
 #' \deqn{x = \beta_1 + \beta_x g + \beta_{E1} E}
 #' \deqn{y = \beta_2 + \beta_y g + \beta_{E2} E}
 #' with \eqn{beta_x} and \eqn{beta_y} returned for each strata.
 #'
-#' The two matrices supplied in `covar` and `interaction` are used to allow the
+#' The two matrices supplied in `gxe_covar` and `gxe_interaction` are used to allow the
 #' greatest flexibility in choice of models for correcting potential GxE interactions.
-#'
 #'
 #'
 #' @param y vector of outcome values.
 #' @param x vector of exposure values.
 #' @param g the instrumental variable.
-#' @param covar an optional matrix of covariates used to derive the stratification and the genetic associations.
-#' If `interactive` is also provided, then these are only used in the genetic association calculation.
-#' @param interaction an optional matrix of covariates used to derive the stratification only. See details.
-#' @param strata_method what method to use for determining strata. By default
-#' this is set to "ranked", using Haodong Tian's double ranked version to calculate
-#' strata. The alternative is "residual" for determining the strata from the residual of the
-#' exposure regressed on the instrument (As in Statley and Burgess paper). The
-#' residual method relies on a constant relationship between the instrument and the
-#' exposure across the range of the exposure.
-#' @param x_strata an optional numeric vector used to superceed the stratification calculation.
-#' Only use this if you have precalculated the strata and just want the genetic associations within those strata.
+#' @param covar an optional matrix of covariates used to derive the stratification
+#' and the genetic associations. If `interactive` is also provided, then these
+#' are only used in the genetic association calculation.
+#' @param gxe_covar an optional matrix of covariates used to derive the
+#' stratification only. See details.
+#' @param gxe_interaction an optional matrix of covariates used to derive the
+#' stratification only. See details.
+#' @param strata_method what method to use for determining strata. There are
+#' three options "residual", "ranked", "interaction".
+#' See details for a longer explanation of these methods. By default
+#' this is set to "ranked".
+#' @param x_residuals an optional numeric vector used if method is "ranked". This will
+#' override the model to calculate residuals, and use these residuals instead.
+#' the ranked method stratification calculation.
+#' @param x_strata an optional numeric vector used to replace the stratification
+#' calculation. Only use this if you have precalculated the strata and just want
+#' the genetic associations within those strata.
 #' @param q the number of quantiles the exposure distribution is to be split
 #' into. Within each quantile a causal effect will be fitted, known as a
 #' localised average causal effect (LACE). The default is deciles (i.e. 10
@@ -72,7 +81,7 @@
 #' (i.e. "gaussian" for continuous outcome data) or binomial (i.e. "binomial" for
 #' binary outcome data) family function. "Coxph" can be used to fit survival data
 #' - in this case y must be a Surv object.
-#' @param controlsonly Only applied if family is "binomial" or "Coxph".
+#' @param controlsonly Only applied if family is "binomial" or "coxph".
 #' If true, the genetic association with x is only calculated in the controls only.
 #' @param prestrat Only applied if method is "ranked".
 #' The proportional size of pre-strata in the doubly-ranked method.
@@ -125,7 +134,8 @@ create_nlmr_summary <- function(y,
                                 x,
                                 g,
                                 covar = NULL,
-                                interaction=NULL,
+                                gxe_covar=NULL,
+                                gxe_interaction=NULL,
                                 strata_method="ranked",
                                 x_strata=NULL,
                                 family = "gaussian",
@@ -146,11 +156,13 @@ if (!is.na(seed)) { set.seed(seed) }
 
 ##################### in put checks
   # checks on method choice
+  stopifnot("family must be one of residual, ranked or " = family%in% c("gaussian", "binomial", "coxph"))
+
   stopifnot(
     "report_GR only works with strata_method ranked" = !(report_GR==TRUE &
                                                       strata_method!="ranked")
   )
-  stopifnot("family must be one of gaussian, binomial or coxph")
+  stopifnot("family must be one of gaussian, binomial or coxph" = family%in% c("gaussian", "binomial", "coxph"))
 
     # covar entry issue
   if (!is.null(covar) & !(is.matrix(covar) & is.numeric(covar))) {
@@ -194,41 +206,63 @@ if (!is.na(seed)) { set.seed(seed) }
 
 ###################################### start of function
 
-  #create strata
+  # ranking helping function
 
-
-  # calculate the iv-free association
-  if (strata_method=="residual"){
-    family2= ifelse(family %in% c("binomial","coxph"), "binomial", "gaussian")
-    ivf <- iv_free(
-    y = y, x = x, g = g,
-    covar = covar, q = q, family = family2, controlsonly=controlsonly
-  )
-    x0q <- ivf$x0q
-  } else if(strata_method=="ranked") {
-    # haodong ranked strata method
-    z = rank(g, ties.method = "random")
-    strata1 = floor((z-1)/q/prestrat)+1
+  calculate_ranked_strata <- function(exp_var, ins_var, prestrat, q) {
+    ins_var <- rank(g, ties.method = "random")
+    strata1 <- floor((ins_var - 1) / q / prestrat) + 1
     # check GR statistic
-    GR_stats<-getGRvalues(X=x, Zstratum=strata1)
-
-    id= seq(x)
-    temp<- data.frame(x=x,strata1=strata1,id=id, g=g)
-    temp<- arrange(.data=temp, x)
-    temp<-group_by(.data=temp, strata1)
-    temp<-mutate(.data=temp, x0q= ceiling(rank(x, ties.method = "random")/prestrat))
-    temp<-arrange(.data=temp, id)
-
-    x0q <- temp$x0q
-  } else {
-    stop("strata ordering must be ranked or residual")
+    GR_stats<-getGRvalues(X=exp_var, Zstratum=strata1)
+    id <- seq(exp_var)
+    temp <- data.frame(exp_var = exp_var, strata1 = strata1, id = id)
+    temp <- arrange(.data = temp, exp_var)
+    temp <- group_by(.data = temp, strata1)
+    temp <- mutate(.data = temp,
+                   x0q = ceiling(rank(exp_var, ties.method = "random") / prestrat))
+    temp <- arrange(.data = temp, id)
+    list(x0q = temp$x0q, strata = strata1, GR_stats=GR_stats)
   }
+  #create strata
+ if(is.null(x_strata)){
 
+   # residual approach - calculate the iv-free association
+   if (strata_method=="residual"){
+   ivf <- iv_free(
+       y = y, x = x, g = g,
+       covar = covar, gxe_covar=gxe_covar,
+       gxe_interaction=gxe_interaction,
+       q = q, controlsonly=controlsonly
+     )
+     x0q <- ivf$x0q
+   }else if(strata_method=="ranked") {
+  # ranked method, rank using x values
 
+    ranked<- calculate_ranked_strata(exp_var=x,
+                                     ins_var=g,
+                                     prestrat = prestrat,
+                                     q=q)
+    x0q <- ranked$x0q
+    GR_stats <- ranked$GR_stats
+ }else if(strata_method=="interaction") {}
+   # ranked method, rank using residual values
+   ivf <- iv_free(
+     y = y, x = x, g = g,
+     covar = covar, gxe_covar=gxe_covar,
+     gxe_interaction=gxe_interaction,
+     q = q, controlsonly=controlsonly
+   )
+   x0 <- ivf$x0
+   ranked<- calculate_ranked_strata(exp_var=x0,
+                                    ins_var=g,
+                                    prestrat = prestrat,
+                                    q=q)
+   x0q <- ranked$x0q
+   GR_stats <- ranked$GR_stats
+  }
 
   quant <- q
 
-  # this calculates the association for each quanta
+  # create vector lists
   by <- rep(NA, quant)
   byse <- rep(NA, quant)
   bx <- rep(NA, quant)
@@ -240,102 +274,150 @@ if (!is.na(seed)) { set.seed(seed) }
   true_xmin <- rep(NA, quant)
   strata_stats<-vector("list", quant)
 
+  # functions to create values within strata labeled by idx
+
+  # F1: choose boundary probs for xmin/xmax
+  xmin_prob <- function(j, quant, strata_bound) if (j == 1) strata_bound[1] else strata_bound[2]
+  xmax_prob <- function(j, quant, strata_bound) if (j == quant) strata_bound[3] else strata_bound[4]
+
+
+  # F2: quantile/mean within stratum
+  q_stratum <- function(v, idx, p) quantile(v[idx], probs = p, na.rm = TRUE, names = FALSE, type = 7)
+  m_stratum <- function(v, idx) mean(v[idx], na.rm = TRUE)
+
+  # F3: fit outcome-on-g model depending on family and if covariates
+  fit_y_on_g <- function(family, y, g, covar, idx) {
+    # make dataframe
+    df <- data.frame(g = g)
+    # Add covariates (matrix/dataframe with columns)
+    if (!is.null(covar)) {
+      covar_df <- if (is.vector(covar) && !is.list(covar)) {
+        data.frame(covar1 = covar)
+      } else {
+        as.data.frame(covar)
+      }
+      # Avoid name clashes
+      names(covar) <- make.names(names(covar), unique = TRUE)
+      df <- cbind(df, covar)
+    }
+    # define formula
+    fml <- if (is.null(covar)) {
+      y ~ g
+    } else {
+      y ~ .
+    }
+
+    # fit relevant model
+    switch(
+      family,
+      binomial = stats::glm(fml, data = df, subset = idx, family = "binomial"),
+      coxph    = survival::coxph(fml, data = df, subset = idx),
+      gaussian = stats::lm(fml, data = df, subset = idx),
+      stop("family must be one of: 'gaussian', 'binomial', 'coxph'")
+    )
+  }
+
+  # F4: fit exposure-on-g model depending on if covariates
+  # and if controls only
+  fit_x_on_g <- function(x, y, g, covar, controlsonly, idx) {
+    if (isTRUE(controlsonly)) {
+      if (is.null(y)) stop("y must be provided when controlsonly=TRUE")
+      idx <- idx & (y == 0)
+    }
+    # make dataframe
+    df <- data.frame(g = g)
+    # Add covariates (matrix/dataframe with columns)
+    if (!is.null(covar)) {
+      covar_df <- if (is.vector(covar) && !is.list(covar)) {
+        data.frame(covar1 = covar)
+      } else {
+        as.data.frame(covar)
+      }
+      # Avoid name clashes
+      names(covar) <- make.names(names(covar), unique = TRUE)
+      df <- cbind(df, covar)
+    }
+    # define formula
+    fml <- if (is.null(covar)) {
+      x ~ g
+    } else {
+      x ~ .
+    }
+
+    # fit relevant model
+    stats::lm(fml, data = df, subset = idx)
+  }
+
+  # F5: extract coefficient + SE for g from model (and stop nicely if missing)
+  coef_se_g <- function(model) {
+    coef_temp <- coef(summary(model))
+    if (inherits(model, "coxph")) { #gives summary as matrix
+     if("g" %in% rownames(coef_temp)) {
+        b <- unname(coef_temp["g", "coef"])
+        se <- unname(coef_temp["g", "se(coef)"])
+      } else {
+        b<- NA
+        se<-NA
+        warning("the regression coefficient in one of the quantiles is missing")
+      }
+      }else{
+        if("g" %in% rownames(coef_temp)) {
+          b <- unname(coef_temp["g", "Estimate"])
+          se <- unname(coef_temp["g", "Std. Error"])
+        }else {
+          b<- NA
+          se<-NA
+          warning("the regression coefficient in one of the quantiles is missing")
+        }
+
+    }
+    }
+
+
 #use the ivfree quantiles
 
-  for (j in 1:quant) {
-    # describe the quantiles of original data
-    if (j==1){
-      xmin[j] <- quantile(x[x0q == j], strata_bound[1])
-    }else{
-      xmin[j] <- quantile(x[x0q == j], strata_bound[2])
-    }
-    if (j==quant){
-      xmax[j] <- quantile(x[x0q == j], strata_bound[3])
-    }else{
-      xmax[j] <- quantile(x[x0q == j], strata_bound[4])
-    }
-    xmean[j] <- mean(x[x0q == j])
-    # model the beta coefficients
-    if (family == "binomial") {
-      if (is.null(covar)) {
-        model <- glm(y[x0q == j] ~ g[x0q == j], family = "binomial")
-        if (controlsonly==T){
-          model2 <- lm(x[x0q == j& y==0] ~ g[x0q == j & y==0])
-        } else {
-          model2 <- lm(x[x0q == j] ~ g[x0q == j])
-        }
-      }else{
-        model <- glm(y[x0q == j] ~ g[x0q == j] + covar[x0q == j, , drop = F],
-                     family = "binomial")
-        if (controlsonly==T){
-          model2 <- lm(x[x0q == j& y==0] ~ g[x0q == j & y==0]+ covar[x0q == j & y==0, , drop = F])
-        } else {
-          model2 <- lm(x[x0q == j] ~ g[x0q == j, drop = F] + covar[x0q == j, , drop = F])
-          }
-      }
-      if (is.na(model$coef[2])) {
-        stop("the regression coefficient of the outcome on the instrument
-           in one of the quantiles is missing")
-      }
-      by[j] <- model$coef[2]
-      byse[j] <- summary(model)$coef[2, 2]
-    }else if(family == "coxph"){
-      if (is.null(covar)) {
-        model <- coxph(y[x0q == j] ~ g[x0q == j])
-        model2 <- lm(x[x0q == j] ~ g[x0q == j])
-      }else{
-        model <- coxph(y[x0q == j] ~ g[x0q == j] + covar[x0q == j, , drop = F])
-        model2 <- lm(x[x0q == j] ~ g[x0q == j, drop = F] + covar[x0q == j, , drop = F])
-      }
-      if (is.na(model$coef[1])) {
-        stop("the regression coefficient of the outcome on the instrument
-           in one of the quantiles is missing")
-      }
-      by[j] <- model$coef[1]
-      byse[j] <- summary(model)$coef[1, 3]
+  for (j in seq_len(quant)) {
+    # index the subset
+    idx <- (x0q == j)
 
-    }else {
-      if (is.null(covar)) {
-        model <- lm(y[x0q == j] ~ g[x0q == j])
-        model2 <- lm(x[x0q == j] ~ g[x0q == j])
-      }else{
-        model <- lm(y[x0q == j] ~ g[x0q == j]+   covar[x0q == j, , drop = F])
-        model2 <- lm(x[x0q == j] ~ g[x0q == j]+   covar[x0q == j, , drop = F])
-      }
-      if (is.na(model$coef[2])) {
-        stop("the regression coefficient of the outcome on the instrument
-           in one of the quantiles is missing")
-      }
-      by[j] <- model$coef[2]
-      byse[j] <- summary(model)$coef[2, 2]
-    }
+    # Describe x in stratum
+    xmin[j]  <- q_stratum(x, idx, xmin_prob(j, quant, strata_bound))
+    xmax[j]  <- q_stratum(x, idx, xmax_prob(j, quant, strata_bound))
+    xmean[j] <- m_stratum(x, idx)
 
-if (is.na(model2$coef[2])) {
-      stop("the regression coefficient of the exposure on the instrument
-           in one of the quantiles is missing")
-    }
+    # Fit exposure model (possibly in controls-only)
+    mod_x <- fit_x_on_g(x=x, g=g,
+                        covar=covar,
+                        idx= idx, y = y,
+                        controlsonly = controlsonly)
+    x_g <- coef_se_g(mod_x)
+    bx[j]   <- x_g$b
+    bxse[j] <- x_g$se
 
-       bx[j] <- model2$coef[2]
-    bxse[j] <- summary(model2)$coef[2, 2]
+    # Fit outcome model
+    mod_y <- fit_y_on_g(family =family,
+                        y = y,
+                        g=g,
+                        covar=covar, idx = idx)
+    y_g <- coef_se_g(mod_y)
+    by[j]   <- y_g$b
+    byse[j] <- y_g$se
 
-
+    # extra statistics, if requested
     if (extra_statistics) {
-      stats<- list( strata=j,
-        xmin = quantile(x[x0q == j], 0),
-                         xmax = quantile(x[x0q == j], 1),
-                   xmean = mean(x[x0q == j]),
-                         ymin = quantile(y[x0q == j], 0),
-                         ymax = quantile(y[x0q == j], 1),
-                         x_fstat = (bx[j]/bxse[j])^2
-
-                   )
-      strata_stats[[j]]<-append(strata_stats[[j]], stats)
-
+      strata_stats[[j]] <- list(
+        strata = j,
+        xmin = q_stratum(x, idx, 0),
+        xmax = q_stratum(x, idx, 1),
+        xmean = xmean[j],
+        ymin = q_stratum(y, idx, 0),
+        ymax = q_stratum(y, idx, 1),
+        x_fstat = (bx[j] / bxse[j])^2
+      )
     }
 
-
-    model <- NULL
-    model2 <- NULL
+    mod_x <- NULL
+    mod_y <- NULL
   }
   # output data
 

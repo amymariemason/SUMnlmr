@@ -2,21 +2,6 @@
 #need to install that package in order to create summarised data
 # https://github.com/jrs95/nlmr for original functions
 
-#' Hamardman product
-#'
-#' hamardman.prod computes the Hamardman product of a vector of regression
-#' coefficients and a matrix of covariates.
-#' @param coef vector of regression coefficients.
-#' @param covar a matrix of covariates
-#' @author James R Staley <js16174@bristol.ac.uk>
-#' @export
-hamardman.prod <- function(coef, covar){
-  if(length(coef)!=ncol(covar)) stop("the number of coefficients is greater than
-                                     the number of covariates")
-  results <- reprow(coef,nrow(covar))*covar
-  return(results)
-}
-
 #' IV-free exposure
 #'
 #' iv_free computes the IV-free exposure.
@@ -44,7 +29,6 @@ iv_free <- function(y,
                     covar=NULL,
                     interaction=NULL,
                     q=10,
-                    family="gaussian",
                     controlsonly=T){
   family <- match.arg(family)
 
@@ -90,7 +74,7 @@ iv_free <- function(y,
   ###### choose subset of data frame, if controls only selected
 
   fit_idx <- rep(TRUE, n)
-  if (family == "binomial" && isTRUE(controlsonly)) {
+  if (isTRUE(controlsonly)) {
     fit_idx <- (y == 0)
     if (!any(fit_idx)) stop("controlsonly=TRUE but there are no controls (y==0).")
   }
