@@ -9,11 +9,15 @@ create_nlmr_summary(
   x,
   g,
   covar = NULL,
+  gxe_covar = NULL,
+  gxe_interaction = NULL,
+  strata_method = "ranked",
+  x_residual = NULL,
+  x_strata = NULL,
   family = "gaussian",
   controlsonly = FALSE,
-  q,
+  q = 10,
   prestrat = 1,
-  strata_method = "ranked",
   strata_bound = c(0.2, 0.1, 0.8, 0.9),
   extra_statistics = FALSE,
   report_GR = FALSE,
@@ -28,27 +32,52 @@ create_nlmr_summary(
 
 \item{g}{the instrumental variable.}
 
-\item{covar}{a matrix of covariates.}
+\item{covar}{an optional matrix of covariates used to derive the stratification
+and the genetic associations. If \code{interactive} is also provided, then these
+are only used in the genetic association calculation.}
 
-\item{family}{a description of the error distribution and link function to be used in the model.
-This is a character string naming either the gaussian
+\item{gxe_covar}{an optional matrix of covariates used to derive the
+stratification only. See details.}
+
+\item{gxe_interaction}{an optional matrix of covariates used to derive the
+stratification only. See details.}
+
+\item{strata_method}{what method to use for determining strata. There are
+three options "residual", "ranked", "interaction".
+See details for a longer explanation of these methods. By default
+this is set to "ranked".}
+
+\item{x_residual}{an optional numeric vector used if method is "ranked". This will
+override the model to calculate residuals, and use these residuals instead.
+the ranked method stratification calculation.}
+
+\item{x_strata}{an optional numeric vector used to replace the stratification
+calculation. Only use this if you have precalculated the strata and just want
+the genetic associations within those strata.}
+
+\item{family}{a description of the error distribution and link function to be
+used in the model. It must be one of "gaussian", "binomial" or "coxph".
+Gaussian should be used for continuous outcome data and will fit linear
+regression models. Binomial should be used to fit logistic regression models to
+binary outcome data. Coxph should be used to fit will fit binary outcome
+This is a character string naming either the "gaussian"
 (i.e. "gaussian" for continuous outcome data) or binomial (i.e. "binomial" for
 binary outcome data) family function. "Coxph" can be used to fit survival data
 \itemize{
 \item in this case y must be a Surv object.
 }}
 
-\item{controlsonly}{whether to estimate the gx association in all people,
-or in controls only. This is set to FALSE as default.
-It has no effect if family is set to "gaussian"}
+\item{controlsonly}{Only applied if family is "binomial" or "coxph".
+If true, the genetic association with x is only calculated in the controls only.}
 
 \item{q}{the number of quantiles the exposure distribution is to be split
 into. Within each quantile a causal effect will be fitted, known as a
 localised average causal effect (LACE). The default is deciles (i.e. 10
 quantiles).}
 
-\item{prestrat}{the proportional size of pre-strata in the doubly-ranked
-method. If prestrat = 1 (default), then pre-strata will contain
+\item{prestrat}{Only applied if method is "ranked".
+The proportional size of pre-strata in the doubly-ranked method.
+If prestrat = 1 (default), then pre-strata will contain
 the number of individuals equal to the number of strata, and 1 individual
 from each pre-stratum is selected into each stratum. If prestrat = 10, then
 pre-strata contain 10 times the number of individuals as the number of
@@ -58,31 +87,23 @@ pre-strata, although if pre-strata are too large such that the instrument
 values vary strongly within pre-strata, then the benefit of the doubly-ranked
 method is lost.}
 
-\item{strata_method}{what method to use for determining strata. By default
-this is set to "ranked", using Haodong Tian's double ranked version to calculate
-strata. The alternative is "residual" for determining the strata from the residual of the
-exposure regressed on the instrument (As in Statley and Burgess paper). The
-residual method relies on a constant relationship between the instrument and the
-exposure across the range of the exposure.}
-
-\item{strata_bound}{controls what range to use for the LACE estimates in graphs display.
-By default this is set to restricted, taking the 10th and 90th percentile of
-internal strata and the 20th and 80th for the bottom of the lowest strata and
-top of the highest strata. It is a vector taking the percentiles for the
-lowers bounds of the bottom and then other strata and then upper bounds of
-top and other strata.
-This only impacts the "max" and "min" values for the summary table
-This can be overridden in piecewise_summ_mr by using the xbreaks argument to
-hardset different breakpoints or replacing default with c(0,0,1,1) to return
-to true max and minimum}
+\item{strata_bound}{This controls what range to use for the LACE estimates in
+graphs display. By default, this is taken conservatively with the 10th and
+90th percentile of internal strata and the 20th and 80th for the bottom of the
+lowest strata and top of the highest strata. It is supplied as a vector of percentiles
+(lower bottom strata, lower other, higher top strata, higher other).
+This only impacts the "max" and "min" values for the summary table.
+This can be overridden in \code{piecewise_summ_mr()} by using the \code{xbreaks} argument to
+hardset different breakpoints or replacing default with \code{c(0,0,1,1)} to return
+to true max and minimums.}
 
 \item{extra_statistics}{This will add a second output reporting extra
 statistics for each strata. These include the true max and min of each
 strata (regardless of strata_bound setting) and the f statistic and p-value
-for the regressions}
+for the regressions.}
 
 \item{report_GR}{This will add the Gelman-Rubin statistics for each strata
-to the output. Note this only works if strata_method="ranked".}
+to the output. Note this only works if the strata method is "ranked".}
 
 \item{report_het}{This will add p-values for assessing the heterogeneity of
 the instrument - exposure relationship.
@@ -102,6 +123,51 @@ replications performed (nboot).
 create_nlmr_summary takes individual level data and creates summerised
 dataset, ready to save and share for summarised nlmr
 }
+\details{
+\subsection{Stratification models}{
+
+Given vectors of an exposure \code{x}, an outcome \code{y} and a instrument \code{g}, as well as a
+matrices of covariates \code{E}. This package implements
+several possible models for stratifying over the exposure value.
+
+The simplest of these the residual method, as described in Statley and Burgess,
+2017 \url{doi:https://doi.org/10.1002/gepi.22041}.  where we regress \code{x} on the genetic
+instrument and the covariate matrix \code{E}
+\deqn{x = \beta_0 + \beta_g g + \beta_E E}
+where \verb{\\beta_E} is a suitable vector of coefficients, and calculate the residual value
+\deqn{x_{resid} = x- (\beta_0 + \beta_g G + \beta_E E})
+Once the strata are formed, the genetic associations with \code{x} and \code{y} are calculated,
+including the covariates matrix E e.g.
+\deqn{x = \beta_1 + \beta_x g + \beta_{E1} E}
+\deqn{y = \beta_2 + \beta_y g + \beta_{E2} E}
+with \eqn{beta_x} and \eqn{beta_y} returned for each strata.
+This method performs poorly unless the genetic effects on the exposure are constant.
+This assumption is often implausible, and thus this approach is not recommended.
+See Burgess, 2023 \url{doi:https://doi.org/10.1159/000531659}.
+
+The second option is "ranked", using Haodong Tian's double ranked version to calculate
+strata. See Haodong et al, 2022 <doi: https://doi.org/10.1101/2022.06.28.497930> for more details on this calculation.
+However, there are concerns about this method's application, particularly in UK Biobank,
+with thanks to Hamiliton et al, 2023 <doi: https://doi.org/10.1007/s10654-024-01113-9> for their
+examples of this. In particular, this method performs poorly when there is a
+GxE interaction, as explained in Zhao et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.26344640>
+
+The final method "interaction" that can be fit is Ang Zhao's GxE correction method,
+as detailed in Zhao et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.26344640>
+where the residual #' is recalculated using two additional matrix of covariants,
+passed using the \code{gxe_covar} (F) and \code{gxe_interaction} (H).
+\deqn{x = \beta_0 + \beta_g g + \beta_{F} F + \beta_{g \times H} g \times H}
+The residual value of this equation is used to form strata using the ranked method.
+Within the strata, the associations with exposure and outcome are then
+calculated using the usual \code{covar} covariants matrix E e.g.
+\deqn{x = \beta_1 + \beta_x g + \beta_{E1} E}
+\deqn{y = \beta_2 + \beta_y g + \beta_{E2} E}
+with \eqn{beta_x} and \eqn{beta_y} returned for each strata.
+
+The two matrices supplied in \code{gxe_covar} and \code{gxe_interaction} are used to allow the
+greatest flexibility in choice of models for correcting potential GxE interactions.
+}
+}
 \author{
-Amy Mason, leaning heavily on work by James Statley and Matt Arnold
+Amy Mason
 }

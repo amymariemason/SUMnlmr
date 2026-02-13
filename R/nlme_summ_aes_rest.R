@@ -706,7 +706,7 @@ if (!is.na(seed)) { set.seed(seed) }
         if (!is.null(breaks)) {
           figure <- figure + scale_y_continuous(breaks = breaks)
         }
-        figure <- figure + coord_trans(y = "log")
+        figure <- figure + coord_transform(y = "log")
       }
     }
     if (ci_type == "quantile") {
@@ -970,7 +970,7 @@ if (!is.na(seed)) { set.seed(seed) }
         if (!is.null(breaks)) {
           figure <- figure + scale_y_continuous(breaks = breaks)
         }
-        figure <- figure + coord_trans(y = "log")
+        figure <- figure + coord_transform(y = "log")
       }
     }
     figure <- figure + theme(

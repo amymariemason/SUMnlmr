@@ -4,7 +4,16 @@
 \alias{iv_free}
 \title{IV-free exposure}
 \usage{
-iv_free(y, x, g, covar = NULL, q = 10, family = "gaussian", controlsonly = T)
+iv_free(
+  y,
+  x,
+  g,
+  covar = NULL,
+  gxe_covar = NULL,
+  gxe_interaction = NULL,
+  q = 10,
+  controlsonly = T
+)
 }
 \arguments{
 \item{y}{vector of outcome values.}
@@ -19,12 +28,12 @@ iv_free(y, x, g, covar = NULL, q = 10, family = "gaussian", controlsonly = T)
 into. The default is deciles (i.e. 10
 quantiles).}
 
-\item{family}{a description of the error distribution and link function to be
-used in the model (either "gaussian" or "binomial" can be specified).}
-
 \item{controlsonly}{whether to estimate the gx association in all people,
 or in controls only. This is set to TRUE by default, but has no effect if
 family is gaussian.}
+
+\item{family}{a description of the error distribution and link function to be
+used in the model (either "gaussian" or "binomial" can be specified).}
 }
 \value{
 \item{xcoef}{the association between the exposure and the instrument}

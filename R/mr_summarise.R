@@ -15,12 +15,12 @@
 #' instrument and the covariate matrix `E`
 #' \deqn{x = \beta_0 + \beta_g g + \beta_E E}
 #' where `\beta_E` is a suitable vector of coefficients, and calculate the residual value
-#' \deqn{x_{resid} = x- (\beta_0 + \beta_g G + \beta_E E})
+#' \deqn{x_{resid} = x- (\beta_0 + \beta_g G + \beta_E E)}
 #' Once the strata are formed, the genetic associations with `x` and `y` are calculated,
 #' including the covariates matrix E e.g.
 #' \deqn{x = \beta_1 + \beta_x g + \beta_{E1} E}
 #' \deqn{y = \beta_2 + \beta_y g + \beta_{E2} E}
-#' with \eqn{beta_x} and \eqn{beta_y} returned for each strata.
+#' with \eqn{\beta_x} and \eqn{\beta_y} returned for each strata.
 #' This method performs poorly unless the genetic effects on the exposure are constant.
 #' This assumption is often implausible, and thus this approach is not recommended.
 #' See Burgess, 2023 <doi:https://doi.org/10.1159/000531659>.
@@ -36,13 +36,13 @@
 #' as detailed in Zhao et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.26344640>
 #' where the residual #' is recalculated using two additional matrix of covariants,
 #' passed using the `gxe_covar` (F) and `gxe_interaction` (H).
-#' \deqn{x = \beta_0 + \beta_g g + \beta_{F} F + \beta_{g \times H} g \times H}
+#' \deqn{x = \beta_0 + \beta_g g + \beta_{F} F + \beta_{g \times H} (g \times H)}
 #' The residual value of this equation is used to form strata using the ranked method.
 #' Within the strata, the associations with exposure and outcome are then
 #' calculated using the usual `covar` covariants matrix E e.g.
 #' \deqn{x = \beta_1 + \beta_x g + \beta_{E1} E}
 #' \deqn{y = \beta_2 + \beta_y g + \beta_{E2} E}
-#' with \eqn{beta_x} and \eqn{beta_y} returned for each strata.
+#' with \eqn{\beta_x} and \eqn{\beta_y} returned for each strata.
 #'
 #' The two matrices supplied in `gxe_covar` and `gxe_interaction` are used to allow the
 #' greatest flexibility in choice of models for correcting potential GxE interactions.
@@ -114,11 +114,19 @@
 #' The first column is the p-value of the Cochran Q heterogeneity test (Q);
 #' the second column is the p-value from the trend test (trend).
 #' @param seed The random seed to use when generating the quantiles (for reproducibility). If set to \code{NA}, the random seed will not be set.
-#' @return model the model specifications. The first column is the number of
-#' quantiles (q); the second column is the position used to relate x to the LACE
-#'  in each quantiles (xpos); the third column is the type of confidence
-#'  interval constructed (ci); the fourth column is the number of bootstrap
-#'  replications performed (nboot).
+#' @return A list containing summary data and optional diagnostics.
+#' \itemize{
+#' \item \code{summary}: data frame with one row per stratum containing
+#' \code{bx}, \code{by}, \code{bxse}, \code{byse}, \code{xmean}, \code{xmin}, and
+#' \code{xmax}.
+#' \item \code{strata_statistics}: returned when
+#' \code{extra_statistics = TRUE}; per-stratum min/max of \code{x} and \code{y},
+#' mean \code{x}, and exposure-model F statistic.
+#' \item \code{GR_max}: maximum Gelman--Rubin statistic for ranked strata.
+#' \item \code{GR_results}: full Gelman--Rubin output when
+#' \code{report_GR = TRUE} and \code{strata_method = "ranked" or "interaction"}.
+#' \item \code{Heterogeneity_results}: heterogeneity/trend test p-values when
+#' \code{report_het = TRUE} and \code{strata_method = "ranked" or "interaction"}.
 
 #' @author Amy Mason
 #' @import ggplot2
@@ -280,7 +288,7 @@ if (!is.na(seed)) { set.seed(seed) }
    quant <- q
 
  } else {
-  if(any.NA(x_strata))(stop("x_strata used; rows missing strata assignment"))
+  if(anyNA(x_strata))(stop("x_strata used; rows missing strata assignment"))
   # relabel to 1..K in case user passed arbitrary labels
   x0q <- match(x_strata, sort(unique(x_strata)))
   quant<- max(x0q)
@@ -466,8 +474,10 @@ if (!is.na(seed)) { set.seed(seed) }
     stats<- dplyr::bind_rows(strata_stats)
     final_output_list[["strata_statistics"]]<- stats
   }
-  if (strata_method=="ranked"){
+  if (strata_method%in%c("ranked", "independant")){
+    if(is.null(x_strata)){
     final_output_list[["GR_max"]]<- GR_stats[1]
+    }
 
     if (report_GR==TRUE){
       final_output_list[["GR_results"]]<-GR_stats
