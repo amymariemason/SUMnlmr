@@ -27,11 +27,10 @@ iv_free <- function(y,
                     x,
                     g,
                     covar=NULL,
-                    interaction=NULL,
+                    gxe_covar=NULL,
+                    gxe_interaction=NULL,
                     q=10,
                     controlsonly=T){
-  family <- match.arg(family)
-
   ##### build dataframe for model
 
   n <- length(x)
@@ -122,7 +121,7 @@ iv_free <- function(y,
   quantiles <- quantile(x0, probs=seq(0,1,1/q))
   # Ensure strictly increasing breaks in case many ties
   quantiles <- unique(quantiles)
-  if (length(quantiles) < q) {
+  if (length(quantiles) < q+1) {
     stop("Residuals have too little variation to compute quantile bins.")
   }
 

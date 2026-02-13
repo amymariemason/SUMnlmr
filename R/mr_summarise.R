@@ -245,15 +245,16 @@ if (!is.na(seed)) { set.seed(seed) }
    if (strata_method=="residual"){
    ivf <- iv_free(
        y = y, x = x, g = g,
-       covar = covar, gxe_covar=gxe_covar,
-       gxe_interaction=gxe_interaction,
+       covar = covar, gxe_covar=NULL,
+       gxe_interaction=NULL,
        q = q, controlsonly=controlsonly
      )
      x0q <- ivf$x0q
    }else if(strata_method=="ranked") {
   # ranked method, rank using x values, unless a residual value is supplied from
      #outside model
-    if(!is.null(x_residual)){exp_var = x_residual}else{exp_var=x}
+    exp_var <- if (!is.null(x_residual)) x_residual else x
+
     ranked<- calculate_ranked_strata(exp_var=exp_var,
                                      ins_var=g,
                                      prestrat = prestrat,
@@ -264,7 +265,7 @@ if (!is.na(seed)) { set.seed(seed) }
    # ranked method, rank using residual values
    ivf <- iv_free(
      y = y, x = x, g = g,
-     covar = covar, gxe_covar=gxe_covar,
+     covar = NULL, gxe_covar=gxe_covar,
      gxe_interaction=gxe_interaction,
      q = q, controlsonly=controlsonly
    )
@@ -276,11 +277,16 @@ if (!is.na(seed)) { set.seed(seed) }
    x0q <- ranked$x0q
    GR_stats <- ranked$GR_stats
  }
+   quant <- q
+
  } else {
-  x0q <- x_strata
+  if(any.NA(x_strata))(stop("x_strata used; rows missing strata assignment"))
+  # relabel to 1..K in case user passed arbitrary labels
+  x0q <- match(x_strata, sort(unique(x_strata)))
+  quant<- max(x0q)
   }
 
-  quant <- q
+
 
   # create vector lists
   by <- rep(NA, quant)
