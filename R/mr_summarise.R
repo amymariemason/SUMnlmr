@@ -15,7 +15,7 @@
 #' instrument and the covariate matrix `E`
 #' \deqn{x = \beta_0 + \beta_g g + \beta_E E}
 #' where `\beta_E` is a suitable vector of coefficients, and calculate the residual value
-#' \deqn{x_{resid} = x- \beta_0 + \beta_g G + \beta_E E}
+#' \deqn{x_{resid} = x- (\beta_0 + \beta_g G + \beta_E E})
 #' Once the strata are formed, the genetic associations with `x` and `y` are calculated,
 #' including the covariates matrix E e.g.
 #' \deqn{x = \beta_1 + \beta_x g + \beta_{E1} E}
@@ -38,8 +38,8 @@
 #' passed using the `gxe_covar` (F) and `gxe_interaction` (H).
 #' \deqn{x = \beta_0 + \beta_g g + \beta_{F} F + \beta_{g \times H} g \times H}
 #' The residual value of this equation is used to form strata using the ranked method.
-#' However within the strata, #' the associations are calculated using the usual
-#' covariants matrix E e.g.
+#' Within the strata, the associations with exposure and outcome are then
+#' calculated using the usual `covar` covariants matrix E e.g.
 #' \deqn{x = \beta_1 + \beta_x g + \beta_{E1} E}
 #' \deqn{y = \beta_2 + \beta_y g + \beta_{E2} E}
 #' with \eqn{beta_x} and \eqn{beta_y} returned for each strata.
@@ -62,7 +62,7 @@
 #' three options "residual", "ranked", "interaction".
 #' See details for a longer explanation of these methods. By default
 #' this is set to "ranked".
-#' @param x_residuals an optional numeric vector used if method is "ranked". This will
+#' @param x_residual an optional numeric vector used if method is "ranked". This will
 #' override the model to calculate residuals, and use these residuals instead.
 #' the ranked method stratification calculation.
 #' @param x_strata an optional numeric vector used to replace the stratification
@@ -137,6 +137,7 @@ create_nlmr_summary <- function(y,
                                 gxe_covar=NULL,
                                 gxe_interaction=NULL,
                                 strata_method="ranked",
+                                x_residual =NULL,
                                 x_strata=NULL,
                                 family = "gaussian",
                                 controlsonly=FALSE,
@@ -156,11 +157,12 @@ if (!is.na(seed)) { set.seed(seed) }
 
 ##################### in put checks
   # checks on method choice
-  stopifnot("family must be one of residual, ranked or " = family%in% c("gaussian", "binomial", "coxph"))
+  stopifnot("strata method must be one of residual, ranked or interaction" =
+              strata_method%in% c("residual", "ranked", "interaction"))
 
   stopifnot(
-    "report_GR only works with strata_method ranked" = !(report_GR==TRUE &
-                                                      strata_method!="ranked")
+    "report_GR does not work with strata method residual" =
+      !(report_GR==TRUE & strata_method=="residual")
   )
   stopifnot("family must be one of gaussian, binomial or coxph" = family%in% c("gaussian", "binomial", "coxph"))
 
@@ -176,14 +178,26 @@ if (!is.na(seed)) { set.seed(seed) }
 
   }
   # interaction entry issue
-  if (!is.null(interaction) & !(is.matrix(interaction) & is.numeric(interaction))) {
+  if (!is.null(gxe_interaction) & !(is.matrix(gxe_interaction) & is.numeric(gxe_interaction))) {
     warning("covariates should be entered as numeric matrix:
             attempting to covert", immediate.=TRUE)
-    interaction2<-model.matrix(~.,data=as.data.frame(interaction), na.action=na.pass)[,-1]
+    interaction2<-model.matrix(~.,data=as.data.frame(gxe_interaction), na.action=na.pass)[,-1]
     print(head(interaction2))
     user_input <- readline("Do you want to run using this matrix for interaction terms (y/n) ")
     if(user_input != 'y') stop('Exiting since you did not press y')
-    interaction<-as.matrix(interaction2)
+    gxe_interaction<-as.matrix(interaction2)
+
+  }
+
+  # second covar entry issue
+  if (!is.null(gxe_covar) & !(is.matrix(gxe_covar) & is.numeric(gxe_covar))) {
+    warning("covariates should be entered as numeric matrix:
+            attempting to covert", immediate.=TRUE)
+    covar2<-model.matrix(~.,data=as.data.frame(gxe_covar), na.action=na.pass)[,-1]
+    print(head(covar2))
+    user_input <- readline("Do you want to run using this matrix for covariates (y/n) ")
+    if(user_input != 'y') stop('Exiting since you did not press y')
+    gxe_covar<-as.matrix(covar2)
 
   }
 
@@ -191,8 +205,10 @@ if (!is.na(seed)) { set.seed(seed) }
   stopifnot("y must be same length as x" = length(y) == length(x))
   stopifnot("g must be same length as x" = length(g) == length(x))
   stopifnot("covar must have same number of rows  as x" = is.null(covar) ||nrow(covar) == length(x))
-  stopifnot("interaction must have same number of rows as x" = is.null(interaction) ||nrow(interaction) == length(x))
-  stopifnot("xs must be same length as x" = is.null(xs) || length(xs) == length(x))
+  stopifnot("gxe_covar must have same number of rows  as x" = is.null(gxe_covar) ||nrow(gxe_covar) == length(x))
+  stopifnot("gxe_interaction must have same number of rows as x" = is.null(gxe_interaction) ||nrow(gxe_interaction) == length(x))
+  stopifnot("x_strata must be same length as x" = is.null(x_strata) || length(x_strata) == length(x))
+  stopifnot("x_residual must be same length as x" = is.null(x_residual) || length(x_residual) == length(x))
 
   # coxph checks
   stopifnot(
@@ -209,11 +225,11 @@ if (!is.na(seed)) { set.seed(seed) }
   # ranking helping function
 
   calculate_ranked_strata <- function(exp_var, ins_var, prestrat, q) {
-    ins_var <- rank(g, ties.method = "random")
+    ins_var <- rank(ins_var, ties.method = "random")
     strata1 <- floor((ins_var - 1) / q / prestrat) + 1
     # check GR statistic
     GR_stats<-getGRvalues(X=exp_var, Zstratum=strata1)
-    id <- seq(exp_var)
+    id <- seq_along(exp_var)
     temp <- data.frame(exp_var = exp_var, strata1 = strata1, id = id)
     temp <- arrange(.data = temp, exp_var)
     temp <- group_by(.data = temp, strata1)
@@ -235,15 +251,16 @@ if (!is.na(seed)) { set.seed(seed) }
      )
      x0q <- ivf$x0q
    }else if(strata_method=="ranked") {
-  # ranked method, rank using x values
-
-    ranked<- calculate_ranked_strata(exp_var=x,
+  # ranked method, rank using x values, unless a residual value is supplied from
+     #outside model
+    if(!is.null(x_residual)){exp_var = x_residual}else{exp_var=x}
+    ranked<- calculate_ranked_strata(exp_var=exp_var,
                                      ins_var=g,
                                      prestrat = prestrat,
                                      q=q)
     x0q <- ranked$x0q
     GR_stats <- ranked$GR_stats
- }else if(strata_method=="interaction") {}
+ }else if(strata_method=="interaction") {
    # ranked method, rank using residual values
    ivf <- iv_free(
      y = y, x = x, g = g,
@@ -258,6 +275,9 @@ if (!is.na(seed)) { set.seed(seed) }
                                     q=q)
    x0q <- ranked$x0q
    GR_stats <- ranked$GR_stats
+ }
+ } else {
+  x0q <- x_strata
   }
 
   quant <- q
@@ -287,42 +307,51 @@ if (!is.na(seed)) { set.seed(seed) }
 
   # F3: fit outcome-on-g model depending on family and if covariates
   fit_y_on_g <- function(family, y, g, covar, idx) {
-    # make dataframe
+    if (!any(idx)) stop("No observations in this stratum.")
+    # make dataframe from genetic predictors
     df <- data.frame(g = g)
-    # Add covariates (matrix/dataframe with columns)
+    # Add covariates (matrix, skip if null)
     if (!is.null(covar)) {
       covar_df <- if (is.vector(covar) && !is.list(covar)) {
-        data.frame(covar1 = covar)
+        data.frame(V1 = covar)
       } else {
         as.data.frame(covar)
       }
       # Avoid name clashes
-      names(covar) <- make.names(names(covar), unique = TRUE)
-      df <- cbind(df, covar)
+      names(covar_df) <- make.names(names(covar_df), unique = TRUE)
+      df <- cbind(df, covar_df)
     }
-    # define formula
-    fml <- if (is.null(covar)) {
-      y ~ g
+    # Build formula
+    if (family == "coxph") {
+      # predictors are the columns currently in df (g + covars if present)
+      fml <- as.formula(paste("y ~", paste(names(df), collapse = " + ")))
+      environment(fml) <- environment()  # ensures y (Surv) is found
+
+
     } else {
-      y ~ .
+      df$y <- y
+      fml <- if (is.null(covar)) {y ~ g} else {y ~ .}
     }
 
     # fit relevant model
-    switch(
+    model<- switch(
       family,
       binomial = stats::glm(fml, data = df, subset = idx, family = "binomial"),
       coxph    = survival::coxph(fml, data = df, subset = idx),
       gaussian = stats::lm(fml, data = df, subset = idx),
       stop("family must be one of: 'gaussian', 'binomial', 'coxph'")
     )
+    model
   }
 
   # F4: fit exposure-on-g model depending on if covariates
   # and if controls only
   fit_x_on_g <- function(x, y, g, covar, controlsonly, idx) {
+    if (!any(idx)) stop("No observations in this stratum.")
     if (isTRUE(controlsonly)) {
       if (is.null(y)) stop("y must be provided when controlsonly=TRUE")
       idx <- idx & (y == 0)
+      if (!any(idx)) stop("No controls in this stratum (after applying y==0).")
     }
     # make dataframe
     df <- data.frame(g = g)
@@ -334,9 +363,10 @@ if (!is.na(seed)) { set.seed(seed) }
         as.data.frame(covar)
       }
       # Avoid name clashes
-      names(covar) <- make.names(names(covar), unique = TRUE)
-      df <- cbind(df, covar)
+      names(covar_df) <- make.names(names(covar_df), unique = TRUE)
+      df <- cbind(df,covar_df)
     }
+    df$x <- x
     # define formula
     fml <- if (is.null(covar)) {
       x ~ g
@@ -370,7 +400,8 @@ if (!is.na(seed)) { set.seed(seed) }
           warning("the regression coefficient in one of the quantiles is missing")
         }
 
-    }
+      }
+    return(list(b=b, se=se))
     }
 
 
@@ -410,8 +441,8 @@ if (!is.na(seed)) { set.seed(seed) }
         xmin = q_stratum(x, idx, 0),
         xmax = q_stratum(x, idx, 1),
         xmean = xmean[j],
-        ymin = q_stratum(y, idx, 0),
-        ymax = q_stratum(y, idx, 1),
+        ymin = if (family == "coxph") NA_real_ else q_stratum(y, idx, 0),
+        ymax = if (family == "coxph") NA_real_ else q_stratum(y, idx, 1),
         x_fstat = (bx[j] / bxse[j])^2
       )
     }
@@ -426,12 +457,18 @@ if (!is.na(seed)) { set.seed(seed) }
 
   final_output_list= list(summary=output)
   if (extra_statistics) {
-    stats<- as.data.frame(do.call(rbind, strata_stats))
+    stats<- dplyr::bind_rows(strata_stats)
     final_output_list[["strata_statistics"]]<- stats
   }
   if (strata_method=="ranked"){
     final_output_list[["GR_max"]]<- GR_stats[1]
 
+    if (report_GR==TRUE){
+      final_output_list[["GR_results"]]<-GR_stats
+    }
+
+
+    if (report_het==TRUE){
     ##### Test of IV-exposure assumption #####
     xcoef_sub <- bx
     xcoef_sub_se <- bxse
@@ -443,10 +480,7 @@ if (!is.na(seed)) { set.seed(seed) }
                            method = "DL"
     )$pval[2]
 
-  if (report_GR==TRUE){
-    final_output_list[["GR_results"]]<-GR_stats
-  }
-  if (report_het==TRUE){
+
     p_heterogeneity <- as.matrix(data.frame(Q = p_het, trend = p_het_trend))
     final_output_list[["Heterogeneity_results"]]<- p_heterogeneity
   }
