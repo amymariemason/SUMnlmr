@@ -37,7 +37,7 @@
 #' where the residual #' is recalculated using two additional matrix of covariants,
 #' passed using the `gxe_covar` (F) and `gxe_interaction` (H).
 #' \deqn{x = \beta_0 + \beta_g g + \beta_{F} F + \beta_{H} H + \beta_{g \times H} (g \times H)}
-#' Then an interaction corrected value of $X$, \eqn{X - \beta_(g \times H)(g \times H)}
+#' Then an interaction corrected value of X, \eqn{X - \beta_(g \times H)(g \times H)}
 #' is used to form strata using the ranked method.
 #' Within the strata, the associations with exposure and outcome are then
 #' calculated using the usual `covar` covariants matrix E e.g.
@@ -63,9 +63,10 @@
 #' three options "residual", "ranked", "interaction".
 #' See details for a longer explanation of these methods. By default
 #' this is set to "ranked".
-#' @param x_residual an optional numeric vector used if method is "ranked". This will
-#' override the model to calculate residuals, and use these residuals instead.
-#' the ranked method stratification calculation.
+#' @param x_corrected an optional numeric vector used if method is "ranked". This will
+#' override the model and use these values in the ranked method stratification
+#' calculation. This can also be used as a way of creating strata with your own
+#' interaction model - supply the interaction corrected X values here.
 #' @param x_strata an optional numeric vector used to replace the stratification
 #' calculation. Only use this if you have precalculated the strata and just want
 #' the genetic associations within those strata.
@@ -146,7 +147,7 @@ create_nlmr_summary <- function(y,
                                 gxe_covar=NULL,
                                 gxe_interaction=NULL,
                                 strata_method="ranked",
-                                x_residual =NULL,
+                                x_corrected =NULL,
                                 x_strata=NULL,
                                 family = "gaussian",
                                 controlsonly=FALSE,
@@ -217,7 +218,7 @@ if (!is.na(seed)) { set.seed(seed) }
   stopifnot("gxe_covar must have same number of rows  as x" = is.null(gxe_covar) ||nrow(gxe_covar) == length(x))
   stopifnot("gxe_interaction must have same number of rows as x" = is.null(gxe_interaction) ||nrow(gxe_interaction) == length(x))
   stopifnot("x_strata must be same length as x" = is.null(x_strata) || length(x_strata) == length(x))
-  stopifnot("x_residual must be same length as x" = is.null(x_residual) || length(x_residual) == length(x))
+  stopifnot("x_corrected must be same length as x" = is.null(x_corrected) || length(x_corrected) == length(x))
 
   # coxph checks
   stopifnot(
@@ -262,7 +263,7 @@ if (!is.na(seed)) { set.seed(seed) }
    }else if(strata_method=="ranked") {
   # ranked method, rank using x values, unless a residual value is supplied from
      #outside model
-    exp_var <- if (!is.null(x_residual)) x_residual else x
+    exp_var <- if (!is.null(x_corrected)) x_corrected else x
 
     ranked<- calculate_ranked_strata(exp_var=exp_var,
                                      ins_var=g,
