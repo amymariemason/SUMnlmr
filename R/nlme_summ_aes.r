@@ -18,7 +18,8 @@
 #' or in controls only. This is set to TRUE by default, but has no effect if
 #' family is gaussian.
 #' @return \item{xcoef}{the association between the exposure and the instrument}
-#' @return \item{x0}{the IV-free exposure.}
+#' @return \item{x0}{the IV-free exposure if covar is supplied OR
+#' the interaction free exposure if an interaction term is supplied.}
 #' @return \item{x0q}{the quantiles of x0.}
 #' @export
 #' @author Amy Mason <am2609@medschl.cam.ac.uk> based on similar function in nlmr
@@ -112,19 +113,33 @@ iv_free <- function(y,
   if (anyNA(coef(model))) {
     stop("There are missing regression coefficients in the regression of the exposure on the instrument and covariates/interactions.")
   }
-
   ### predict residuals
 
   pred_all <- predict(model, newdata = df)
+  if(is.null(gxe_interaction)){
   x0 <- df$x - pred_all
+  } else {
+    coefs<-coef(model)
+    get_int_coef <- function(v) {
+      name1 <- paste0("g:", v)
+      name2 <- paste0(v, ":g")
 
+      if (name1 %in% names(coefs)) return(coefs[[name1]])
+      if (name2 %in% names(coefs)) return(coefs[[name2]])
+
+      stop("Missing interaction coefficient for ", v)
+    }
+    gxe_values<- sapply(int_names, get_int_coef)
+    gE <- as.matrix(gxe_interaction) * df$g
+    interaction_component <- as.vector(gE %*%  gxe_values)
+    x0 <- df$x - interaction_component
+  }
   quantiles <- quantile(x0, probs=seq(0,1,1/q))
   # Ensure strictly increasing breaks in case many ties
   quantiles <- unique(quantiles)
   if (length(quantiles) < q+1) {
     stop("Residuals have too little variation to compute quantile bins.")
   }
-
   x0q <- cut(x0, quantiles, include.lowest=T, labels=F)
   results <- list(x0=x0, x0q=x0q)
   return(results)

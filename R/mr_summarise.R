@@ -36,8 +36,9 @@
 #' as detailed in Zhao et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.26344640>
 #' where the residual #' is recalculated using two additional matrix of covariants,
 #' passed using the `gxe_covar` (F) and `gxe_interaction` (H).
-#' \deqn{x = \beta_0 + \beta_g g + \beta_{F} F + \beta_{g \times H} (g \times H)}
-#' The residual value of this equation is used to form strata using the ranked method.
+#' \deqn{x = \beta_0 + \beta_g g + \beta_{F} F + \beta_{H} H + \beta_{g \times H} (g \times H)}
+#' Then an interaction corrected value of $X$, \eqn{X - \beta_(g \times H)(g \times H)}
+#' is used to form strata using the ranked method.
 #' Within the strata, the associations with exposure and outcome are then
 #' calculated using the usual `covar` covariants matrix E e.g.
 #' \deqn{x = \beta_1 + \beta_x g + \beta_{E1} E}
@@ -270,7 +271,7 @@ if (!is.na(seed)) { set.seed(seed) }
     x0q <- ranked$x0q
     GR_stats <- ranked$GR_stats
  }else if(strata_method=="interaction") {
-   # ranked method, rank using residual values
+   # ranked method, rank using residual values X - β_(G×E) * (G×E) - iv_free does this if gxe_interaction is not null
    ivf <- iv_free(
      y = y, x = x, g = g,
      covar = NULL, gxe_covar=gxe_covar,
