@@ -138,7 +138,7 @@ test_that("supports custom stratification inputs", {
     q = 10,
     family = "gaussian",
     strata_method = "ranked",
-    x_residual = test_data$u,
+    x_corrected = test_data$u,
     seed = 1234
   )
 
@@ -151,7 +151,7 @@ test_that("supports custom stratification inputs", {
     q = 10,
     family = "gaussian",
     strata_method = "ranked",
-    x_residual = test_data$X - test_data$u,
+    x_corrected = test_data$X - test_data$u,
     seed = 1234
   ))
 

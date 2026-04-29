@@ -12,7 +12,7 @@ create_nlmr_summary(
   gxe_covar = NULL,
   gxe_interaction = NULL,
   strata_method = "ranked",
-  x_residual = NULL,
+  x_corrected = NULL,
   x_strata = NULL,
   family = "gaussian",
   controlsonly = FALSE,
@@ -22,6 +22,7 @@ create_nlmr_summary(
   extra_statistics = FALSE,
   report_GR = FALSE,
   report_het = FALSE,
+  return_assignment = FALSE,
   seed = 1234
 )
 }
@@ -47,9 +48,10 @@ three options "residual", "ranked", "interaction".
 See details for a longer explanation of these methods. By default
 this is set to "ranked".}
 
-\item{x_residual}{an optional numeric vector used if method is "ranked". This will
-override the model to calculate residuals, and use these residuals instead.
-the ranked method stratification calculation.}
+\item{x_corrected}{an optional numeric vector used if method is "ranked". This will
+override the model and use these values in the ranked method stratification
+calculation. This can also be used as a way of creating strata with your own
+interaction model - supply the interaction corrected X values here.}
 
 \item{x_strata}{an optional numeric vector used to replace the stratification
 calculation. Only use this if you have precalculated the strata and just want
@@ -110,14 +112,26 @@ the instrument - exposure relationship.
 The first column is the p-value of the Cochran Q heterogeneity test (Q);
 the second column is the p-value from the trend test (trend).}
 
+\item{return_assignment}{reports the strata assignment of each row, to assist
+in examining stratum distributions.}
+
 \item{seed}{The random seed to use when generating the quantiles (for reproducibility). If set to \code{NA}, the random seed will not be set.}
 }
 \value{
-model the model specifications. The first column is the number of
-quantiles (q); the second column is the position used to relate x to the LACE
-in each quantiles (xpos); the third column is the type of confidence
-interval constructed (ci); the fourth column is the number of bootstrap
-replications performed (nboot).
+A list containing summary data and optional diagnostics.
+\itemize{
+\item \code{summary}: data frame with one row per stratum containing
+\code{bx}, \code{by}, \code{bxse}, \code{byse}, \code{xmean}, \code{xmin}, and
+\code{xmax}.
+\item \code{strata_statistics}: returned when
+\code{extra_statistics = TRUE}; per-stratum min/max of \code{x} and \code{y},
+mean \code{x}, and exposure-model F statistic.
+\item \code{GR_max}: maximum Gelman--Rubin statistic for ranked strata.
+\item \code{GR_results}: full Gelman--Rubin output when
+\code{report_GR = TRUE} and \code{strata_method = "ranked" or "interaction"}.
+\item \code{Heterogeneity_results}: heterogeneity/trend test p-values when
+\code{report_het = TRUE} and \code{strata_method = "ranked" or "interaction"}.
+}
 }
 \description{
 create_nlmr_summary takes individual level data and creates summerised
@@ -135,12 +149,12 @@ The simplest of these the residual method, as described in Statley and Burgess,
 instrument and the covariate matrix \code{E}
 \deqn{x = \beta_0 + \beta_g g + \beta_E E}
 where \verb{\\beta_E} is a suitable vector of coefficients, and calculate the residual value
-\deqn{x_{resid} = x- (\beta_0 + \beta_g G + \beta_E E})
+\deqn{x_{resid} = x- (\beta_0 + \beta_g G + \beta_E E)}
 Once the strata are formed, the genetic associations with \code{x} and \code{y} are calculated,
 including the covariates matrix E e.g.
 \deqn{x = \beta_1 + \beta_x g + \beta_{E1} E}
 \deqn{y = \beta_2 + \beta_y g + \beta_{E2} E}
-with \eqn{beta_x} and \eqn{beta_y} returned for each strata.
+with \eqn{\beta_x} and \eqn{\beta_y} returned for each strata.
 This method performs poorly unless the genetic effects on the exposure are constant.
 This assumption is often implausible, and thus this approach is not recommended.
 See Burgess, 2023 \url{doi:https://doi.org/10.1159/000531659}.
@@ -156,13 +170,14 @@ The final method "interaction" that can be fit is Ang Zhao's GxE correction meth
 as detailed in Zhao et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.26344640>
 where the residual #' is recalculated using two additional matrix of covariants,
 passed using the \code{gxe_covar} (F) and \code{gxe_interaction} (H).
-\deqn{x = \beta_0 + \beta_g g + \beta_{F} F + \beta_{g \times H} g \times H}
-The residual value of this equation is used to form strata using the ranked method.
+\deqn{x = \beta_0 + \beta_g g + \beta_{F} F + \beta_{H} H + \beta_{g \times H} (g \times H)}
+Then an interaction corrected value of X, \eqn{X - \beta_(g \times H)(g \times H)}
+is used to form strata using the ranked method.
 Within the strata, the associations with exposure and outcome are then
 calculated using the usual \code{covar} covariants matrix E e.g.
 \deqn{x = \beta_1 + \beta_x g + \beta_{E1} E}
 \deqn{y = \beta_2 + \beta_y g + \beta_{E2} E}
-with \eqn{beta_x} and \eqn{beta_y} returned for each strata.
+with \eqn{\beta_x} and \eqn{\beta_y} returned for each strata.
 
 The two matrices supplied in \code{gxe_covar} and \code{gxe_interaction} are used to allow the
 greatest flexibility in choice of models for correcting potential GxE interactions.

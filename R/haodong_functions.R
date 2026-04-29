@@ -13,7 +13,7 @@
 #' @return max_GR is the maximum G-R statistic accross all strata
 #' @return statified_strata is a list of the strata where the GR-statistic meets
 #'  the threshold limit
-#' @return GR_values is a table of the {a} and {b} values for each strata
+#' @return GR_values is a table of the \code{a} and \code{b} values for each strata
 #' @examples
 #'  #Toy data example------------------------------------------------------------------
 #'  N<-10000  #N is the total ssample size
@@ -149,7 +149,7 @@ getGRvalues<-function(X=X,
 
 #' Lower Coefficient value
 #' @description function to obtain the lower coefficient values
-#' (i.e. {b} in Text S1) for each pre-strata
+#' (i.e. \code{b} in Text S1) for each pre-strata
 #' @param vec input vector
 #' @importFrom utils head
 #' @export
@@ -160,7 +160,7 @@ lowfun<-function( vec  ){
 }
 
 #' Upper Coefficient value
-#' @description function to obtain the upper coefficient values (i.e. {a} in Text S1) for
+#' @description function to obtain the upper coefficient values (i.e. \code{a} in Text S1) for
 #' each pre-strata
 #' @param vec input vector
 #' @importFrom utils head

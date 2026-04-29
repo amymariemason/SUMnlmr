@@ -12,8 +12,8 @@
 #' into. The default is deciles (i.e. 10
 #' quantiles).
 #' @param covar a matrix of covariates.
-#' @param family a description of the error distribution and link function to be
-#'  used in the model (either "gaussian" or "binomial" can be specified).
+#' @param gxe_covar a matrix of covariates for use in the interaction correction
+#' @param gxe_interaction a matrix of covariates to use as interaction terms in the interaction correction
 #' @param controlsonly whether to estimate the gx association in all people,
 #' or in controls only. This is set to TRUE by default, but has no effect if
 #' family is gaussian.

@@ -115,6 +115,8 @@
 #' the instrument - exposure relationship.
 #' The first column is the p-value of the Cochran Q heterogeneity test (Q);
 #' the second column is the p-value from the trend test (trend).
+#' @param return_assignment reports the strata assignment of each row, to assist
+#' in examining stratum distributions.
 #' @param seed The random seed to use when generating the quantiles (for reproducibility). If set to \code{NA}, the random seed will not be set.
 #' @return A list containing summary data and optional diagnostics.
 #' \itemize{
@@ -129,7 +131,7 @@
 #' \code{report_GR = TRUE} and \code{strata_method = "ranked" or "interaction"}.
 #' \item \code{Heterogeneity_results}: heterogeneity/trend test p-values when
 #' \code{report_het = TRUE} and \code{strata_method = "ranked" or "interaction"}.
-
+#' }
 #' @author Amy Mason
 #' @import ggplot2
 #' @import matrixStats
@@ -157,6 +159,7 @@ create_nlmr_summary <- function(y,
                                 extra_statistics =FALSE,
                                 report_GR=FALSE,
                                 report_het=FALSE,
+                                return_assignment=FALSE,
                                 seed=1234) {
 
   if( exists(".Random.seed") ) {
@@ -476,7 +479,7 @@ if (!is.na(seed)) { set.seed(seed) }
     stats<- dplyr::bind_rows(strata_stats)
     final_output_list[["strata_statistics"]]<- stats
   }
-  if (strata_method%in%c("ranked", "independant")){
+  if (strata_method%in%c("ranked", "interaction")){
     if(is.null(x_strata)){
     final_output_list[["GR_max"]]<- GR_stats[1]
     }
@@ -501,8 +504,12 @@ if (!is.na(seed)) { set.seed(seed) }
 
     p_heterogeneity <- as.matrix(data.frame(Q = p_het, trend = p_het_trend))
     final_output_list[["Heterogeneity_results"]]<- p_heterogeneity
-  }
     }
+  }
+    if(return_assignment){
+      final_output_list[["Strata_assignment"]] <- x0q
+    }
+
 
 
   # print(list(summary = head(output)))

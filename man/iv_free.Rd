@@ -24,6 +24,10 @@ iv_free(
 
 \item{covar}{a matrix of covariates.}
 
+\item{gxe_covar}{a matrix of covariates for use in the interaction correction}
+
+\item{gxe_interaction}{a matrix of covariates to use as interaction terms in the interaction correction}
+
 \item{q}{the number of quantiles the exposure distribution is to be split
 into. The default is deciles (i.e. 10
 quantiles).}
@@ -31,14 +35,12 @@ quantiles).}
 \item{controlsonly}{whether to estimate the gx association in all people,
 or in controls only. This is set to TRUE by default, but has no effect if
 family is gaussian.}
-
-\item{family}{a description of the error distribution and link function to be
-used in the model (either "gaussian" or "binomial" can be specified).}
 }
 \value{
 \item{xcoef}{the association between the exposure and the instrument}
 
-\item{x0}{the IV-free exposure.}
+\item{x0}{the IV-free exposure if covar is supplied OR
+the interaction free exposure if an interaction term is supplied.}
 
 \item{x0q}{the quantiles of x0.}
 }
