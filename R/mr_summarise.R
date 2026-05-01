@@ -53,7 +53,7 @@
 #' @param x vector of exposure values.
 #' @param g the instrumental variable.
 #' @param covar an optional matrix of covariates used to derive the stratification
-#' and the genetic associations. If `interactive` is also provided, then these
+#' and the genetic associations. If `interaction` is also provided, then these
 #' are only used in the genetic association calculation.
 #' @param gxe_covar an optional matrix of covariates used to derive the
 #' stratification only. See details.
@@ -115,9 +115,10 @@
 #' the instrument - exposure relationship.
 #' The first column is the p-value of the Cochran Q heterogeneity test (Q);
 #' the second column is the p-value from the trend test (trend).
-#' @param return_assignment reports the strata assignment of each row, to assist
-#' in examining stratum distributions.
-#' @param seed The random seed to use when generating the quantiles (for reproducibility). If set to \code{NA}, the random seed will not be set.
+#' @param return_assignmentreports the strata assignment of each participant,
+#' to assist in examining stratum distributions.
+#' @param seed The random seed to use when generating the quantiles
+#' (for reproducibility). If set to \code{NA}, the random seed will not be set.
 #' @return A list containing summary data and optional diagnostics.
 #' \itemize{
 #' \item \code{summary}: data frame with one row per stratum containing
