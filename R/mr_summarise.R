@@ -32,10 +32,12 @@
 #' examples of this. In particular, this method performs poorly when there is a
 #' GxE interaction, as explained in Zhao et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.26344640>
 #'
-#' The final method "interaction" that can be fit is Ang Zhao's GxE correction method,
-#' as detailed in Zhao et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.26344640>
-#' where the residual #' is recalculated using two additional matrix of covariants,
-#' passed using the `gxe_covar` (F) and `gxe_interaction` (H).
+#'The final method "interaction" is an extension of the ranked method developed
+#'specifically to mitigate GxE-induced bias in that method, as detailed in
+#'Zhou et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.2634464>.
+#'In this approach, an interaction model is first fitted using two
+#'additional matrices, passed using the `gxe_covar` (F, covariates) and
+#'`gxe_interaction` (H, effect modifiers).
 #' \deqn{x = \beta_0 + \beta_g g + \beta_{F} F + \beta_{H} H + \beta_{g \times H} (g \times H)}
 #' Then an interaction corrected value of X, \eqn{X - \beta_(g \times H)(g \times H)}
 #' is used to form strata using the ranked method.
@@ -115,7 +117,7 @@
 #' the instrument - exposure relationship.
 #' The first column is the p-value of the Cochran Q heterogeneity test (Q);
 #' the second column is the p-value from the trend test (trend).
-#' @param return_assignmentreports the strata assignment of each participant,
+#' @param return_assignment reports the strata assignment of each participant,
 #' to assist in examining stratum distributions.
 #' @param seed The random seed to use when generating the quantiles
 #' (for reproducibility). If set to \code{NA}, the random seed will not be set.
@@ -132,6 +134,8 @@
 #' \code{report_GR = TRUE} and \code{strata_method = "ranked" or "interaction"}.
 #' \item \code{Heterogeneity_results}: heterogeneity/trend test p-values when
 #' \code{report_het = TRUE} and \code{strata_method = "ranked" or "interaction"}.
+#' \item \code{Strata_assignment}: strata assignment for each participant when
+#' return_assignment = TRUE
 #' }
 #' @author Amy Mason
 #' @import ggplot2
