@@ -124,6 +124,11 @@ A list containing summary data and optional diagnostics.
 \item \code{summary}: data frame with one row per stratum containing
 \code{bx}, \code{by}, \code{bxse}, \code{byse}, \code{xmean}, \code{xmin}, and
 \code{xmax}.
+\item \code{Dropped}: always returned; integer giving the number of
+individuals removed due to missing values in any of \code{y}, \code{x},
+\code{g}, \code{covar}, \code{gxe_covar}, \code{gxe_interaction},
+\code{x_corrected}, or \code{x_strata}. A message is also printed when
+this value is greater than zero.
 \item \code{strata_statistics}: returned when
 \code{extra_statistics = TRUE}; per-stratum min/max of \code{x} and \code{y},
 mean \code{x}, and exposure-model F statistic.

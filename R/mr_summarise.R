@@ -126,6 +126,11 @@
 #' \item \code{summary}: data frame with one row per stratum containing
 #' \code{bx}, \code{by}, \code{bxse}, \code{byse}, \code{xmean}, \code{xmin}, and
 #' \code{xmax}.
+#' \item \code{Dropped}: always returned; integer giving the number of
+#' individuals removed due to missing values in any of \code{y}, \code{x},
+#' \code{g}, \code{covar}, \code{gxe_covar}, \code{gxe_interaction},
+#' \code{x_corrected}, or \code{x_strata}. A message is also printed when
+#' this value is greater than zero.
 #' \item \code{strata_statistics}: returned when
 #' \code{extra_statistics = TRUE}; per-stratum min/max of \code{x} and \code{y},
 #' mean \code{x}, and exposure-model F statistic.
@@ -237,6 +242,30 @@ if (!is.na(seed)) { set.seed(seed) }
     "cannot use controlsonly option with family coxph" = !(family=="coxph" &
                                                              controlsonly==TRUE)
   )
+
+  ##################### missing data
+  #determine who has all data
+  complete <- !is.na(x) & !is.na(g) & !is.na(y)
+  if (!is.null(covar))           complete <- complete & stats::complete.cases(covar)
+  if (!is.null(gxe_covar))       complete <- complete & stats::complete.cases(gxe_covar)
+  if (!is.null(gxe_interaction)) complete <- complete & stats::complete.cases(gxe_interaction)
+  if (!is.null(x_corrected))     complete <- complete & !is.na(x_corrected)
+  if (!is.null(x_strata))        complete <- complete & !is.na(x_strata)
+
+  # drop none complete data and report
+  n_dropped <- sum(!complete)
+  if (n_dropped > 0) {
+    message(n_dropped, " individual(s) removed due to missing data.")
+    y <- y[complete]
+    x <- x[complete]
+    g <- g[complete]
+    if (!is.null(covar))           covar           <- covar[complete, , drop = FALSE]
+    if (!is.null(gxe_covar))       gxe_covar       <- gxe_covar[complete, , drop = FALSE]
+    if (!is.null(gxe_interaction)) gxe_interaction <- gxe_interaction[complete, , drop = FALSE]
+    if (!is.null(x_corrected))     x_corrected     <- x_corrected[complete]
+    if (!is.null(x_strata))        x_strata        <- x_strata[complete]
+  }
+
 
 ###################################### start of function
 
@@ -458,7 +487,6 @@ if (!is.na(seed)) { set.seed(seed) }
     by[j]   <- y_g$b
     byse[j] <- y_g$se
 
-    # extra statistics, if requested
     if (extra_statistics) {
       strata_stats[[j]] <- list(
         strata = j,
@@ -514,7 +542,7 @@ if (!is.na(seed)) { set.seed(seed) }
     if(return_assignment){
       final_output_list[["Strata_assignment"]] <- x0q
     }
-
+    final_output_list[["Dropped"]]<-n_dropped
 
 
   # print(list(summary = head(output)))
