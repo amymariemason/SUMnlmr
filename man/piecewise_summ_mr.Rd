@@ -6,13 +6,14 @@
 data}
 \usage{
 piecewise_summ_mr(
-  by,
-  bx,
-  byse,
-  bxse,
-  xmean,
-  xmin,
-  xmax,
+  summ = NULL,
+  by = NULL,
+  bx = NULL,
+  byse = NULL,
+  bxse = NULL,
+  xmean = NULL,
+  xmin = NULL,
+  xmax = NULL,
   xbreaks = NULL,
   family = "gaussian",
   average.exposure.associations = FALSE,
@@ -29,6 +30,10 @@ piecewise_summ_mr(
 )
 }
 \arguments{
+\item{summ}{a dataframe contains bx, by, bxse, byse, xmean. This is the
+summary output of the \code{create_nlmr_summary} function; either as the full output or
+just passing the summary part.}
+
 \item{by}{vector of gene-outcome associations.}
 
 \item{bx}{vector of gene-exposure associations.}

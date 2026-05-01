@@ -10,6 +10,9 @@
 #' @note There is no option for covariates; they would need to be applied at an
 #' earlier stage in the individual data, using the mr_summarise function.
 #'
+#'@param summ a dataframe contains bx, by, bxse, byse, xmean. This is the
+#' summary output of the `create_nlmr_summary` function; either as the full output or
+#' just passing the summary part.
 #' @param by vector of gene-outcome associations.
 #' @param bx vector of gene-exposure associations.
 #' @param byse vector of standard errors of gene-outcome associations.
@@ -70,13 +73,14 @@
 #' @importFrom metafor rma
 #' @importFrom metafor rma.uni
 #' @export
-piecewise_summ_mr <- function(by,
-                              bx,
-                              byse,
-                              bxse,
-                              xmean,
-                              xmin,
-                              xmax,
+piecewise_summ_mr <- function(summ=NULL,
+                              by= NULL,
+                              bx= NULL,
+                              byse=NULL,
+                              bxse=NULL,
+                              xmean=NULL,
+                              xmin=NULL,
+                              xmax= NULL,
                               xbreaks = NULL,
                               family = "gaussian",
                               average.exposure.associations = FALSE,
@@ -96,6 +100,31 @@ piecewise_summ_mr <- function(by,
 }
 if (!is.na(seed)) { set.seed(seed) }
 
+  ##### Allow direct use of create_nlmr_summary output #####
+  if (is.list(summ) && !is.data.frame(summ) && "summary" %in% names(summ)) {
+    summ <- summ$summary
+  }
+  if (is.data.frame(summ)) {
+    expected_cols <- c("by", "bx", "byse", "bxse", "xmean", "xmin", "xmax")
+    missing_cols <- setdiff(expected_cols, names(summ))
+    if (length(missing_cols) > 0) {
+      stop(
+        "When first argument is a data frame/list summary, it must contain columns: ",
+        paste(expected_cols, collapse = ", "),
+        ". Missing: ",
+        paste(missing_cols, collapse = ", ")
+      )
+    }
+    bx <- summ$bx
+    byse <- summ$byse
+    bxse <- summ$bxse
+    xmean <- summ$xmean
+
+
+    by <- summ$by
+    xmin <- summ$xmin
+    xmax <- summ$xmax
+  }
 
   ##### Error messages #####
 

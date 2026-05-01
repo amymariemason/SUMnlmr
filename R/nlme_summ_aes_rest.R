@@ -13,6 +13,9 @@ if (getRversion() >= "2.15.1") {
 #' the function may error as several fractional polynomials provide the same
 #' fit.
 #'
+#' @param summ a dataframe contains bx, by, bxse, byse, xmean. This is the
+#' summary output of the `create_nlmr_summary` function; either as the full output or
+#' just passing the summary part.
 #' @param by vector of gene-outcome associations.
 #' @param bx vector of gene-exposure associations.
 #' @param byse vector of standard errors of gene-outcome associations.
@@ -98,7 +101,7 @@ if (getRversion() >= "2.15.1") {
 ## fix in line 204 to correct a typo; add $x to give
 ## log(plot_data$x) in the second from last term
 
-frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = "both",
+frac_poly_summ_mr <- function(summ=NULL, by=NULL, bx=NULL, byse=NULL, bxse=NULL, xmean=NULL, method = "FE", d = "both",
                               powers = c(0, -2, -1.5, -1, -0.5, 1, 2),
                               pd = 0.05, average.exposure.associations = FALSE, ci = "model_se", nboot = 100,
                               fig = FALSE, family = "binomial", offset = 0,
@@ -113,6 +116,27 @@ frac_poly_summ_mr <- function(by, bx, byse, bxse, xmean, method = "FE", d = "bot
 }
 if (!is.na(seed)) { set.seed(seed) }
 
+  ##### Allow direct use of create_nlmr_summary output #####
+  if (is.list(summ) && !is.data.frame(summ) && "summary" %in% names(summ)) {
+    summ <- summ$summary
+  }
+  if (is.data.frame(summ)) {
+    expected_cols <- c("by", "bx", "byse", "bxse", "xmean")
+    missing_cols <- setdiff(expected_cols, names(summ))
+    if (length(missing_cols) > 0) {
+      stop(
+        "When first argument is a data frame/list summary, it must contain columns: ",
+        paste(expected_cols, collapse = ", "),
+        ". Missing: ",
+        paste(missing_cols, collapse = ", ")
+      )
+    }
+    bx <- summ$bx
+    byse <- summ$byse
+    bxse <- summ$bxse
+    xmean <- summ$xmean
+    by <- summ$by
+  }
 
   ##### Error messages #####
   if (!(d == 1 | d == 2 | d == "both")) {

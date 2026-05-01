@@ -56,7 +56,7 @@ fractional polynomial.
 You can install the released version of SUMnlmr from 
 [GitHub](https://github.com/) with:
 
-``` r
+```{r}
 # install.packages("devtools")
 devtools::install_github("amymariemason/SUMnlmr")
 ```
@@ -67,8 +67,8 @@ This is a basic example which shows you how to create the semi-summarized data
 form. First we create some practice data:
 
 ```{r example}
-devtools::load_all()
-#library(SUMnlmr)
+#devtools::load_all()
+library(SUMnlmr)
 ## create some data to practise on
 test_data<-create_ind_data(N=10000, beta2=2, beta1=1)
 # this creates quadratic.Y  = x + 2x^2 + errorY 

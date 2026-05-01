@@ -579,8 +579,8 @@ if (!is.na(seed)) { set.seed(seed) }
 #'  with the usual adaptions for p=0 or p_1=p_2
 #'  }
 #' @return data A data-frame containing the values of g, the genetic variate;
-#' X, the exposure; and a variety of Y, the outcome values.
-#' All outcomes are continuous not binary.
+#' X, the exposure; and a variety of Y, the outcome values, including
+#' \code{y.bin}, a binary outcome generated from a logistic model of X.
 #' @author Amy Mason
 #' @import stats
 #' @export
@@ -608,6 +608,8 @@ create_ind_data <- function(N, gpar = 0.3, par1 = 1, par2 = 0,
   data$log.Y <- beta0 + beta1 * log(data$X) + confound * data$u + data$errorY
   data$threshold.Y <- ifelse(data$X > beta2, beta0 + beta1 * data$X, beta0) +
     confound * data$u + data$errorY
+  lp <- beta1 * data$X + confound * data$u
+  data$y.bin <- rbinom(N, 1, stats::plogis(lp - mean(lp)))
   if (par1 == par2) {
     if (par1 == 0) {
       data$fracpoly.Y <- beta0 + beta1 * log(data$X) + beta2 * log(data$X) * log(data$X) +

@@ -35,8 +35,8 @@ binomial distribution with n=2 and p = gpar.}
 }
 \value{
 data A data-frame containing the values of g, the genetic variate;
-X, the exposure; and a variety of Y, the outcome values.
-All outcomes are continuous not binary.
+X, the exposure; and a variety of Y, the outcome values, including
+\code{y.bin}, a binary outcome generated from a logistic model of X.
 }
 \description{
 generates individual level data with a single genetic variant
