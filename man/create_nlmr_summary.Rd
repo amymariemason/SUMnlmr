@@ -34,7 +34,7 @@ create_nlmr_summary(
 \item{g}{the instrumental variable.}
 
 \item{covar}{an optional matrix of covariates used to derive the stratification
-and the genetic associations. If \code{interactive} is also provided, then these
+and the genetic associations. If \code{interaction} is also provided, then these
 are only used in the genetic association calculation.}
 
 \item{gxe_covar}{an optional matrix of covariates used to derive the
@@ -112,10 +112,11 @@ the instrument - exposure relationship.
 The first column is the p-value of the Cochran Q heterogeneity test (Q);
 the second column is the p-value from the trend test (trend).}
 
-\item{return_assignment}{reports the strata assignment of each row, to assist
-in examining stratum distributions.}
+\item{return_assignment}{reports the strata assignment of each participant,
+to assist in examining stratum distributions.}
 
-\item{seed}{The random seed to use when generating the quantiles (for reproducibility). If set to \code{NA}, the random seed will not be set.}
+\item{seed}{The random seed to use when generating the quantiles
+(for reproducibility). If set to \code{NA}, the random seed will not be set.}
 }
 \value{
 A list containing summary data and optional diagnostics.
@@ -131,6 +132,8 @@ mean \code{x}, and exposure-model F statistic.
 \code{report_GR = TRUE} and \code{strata_method = "ranked" or "interaction"}.
 \item \code{Heterogeneity_results}: heterogeneity/trend test p-values when
 \code{report_het = TRUE} and \code{strata_method = "ranked" or "interaction"}.
+\item \code{Strata_assignment}: strata assignment for each participant when
+return_assignment = TRUE
 }
 }
 \description{
@@ -166,10 +169,12 @@ with thanks to Hamiliton et al, 2023 <doi: https://doi.org/10.1007/s10654-024-01
 examples of this. In particular, this method performs poorly when there is a
 GxE interaction, as explained in Zhao et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.26344640>
 
-The final method "interaction" that can be fit is Ang Zhao's GxE correction method,
-as detailed in Zhao et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.26344640>
-where the residual #' is recalculated using two additional matrix of covariants,
-passed using the \code{gxe_covar} (F) and \code{gxe_interaction} (H).
+The final method "interaction" is an extension of the ranked method developed
+specifically to mitigate GxE-induced bias in that method, as detailed in
+Zhou et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.2634464>.
+In this approach, an interaction model is first fitted using two
+additional matrices, passed using the \code{gxe_covar} (F, covariates) and
+\code{gxe_interaction} (H, effect modifiers).
 \deqn{x = \beta_0 + \beta_g g + \beta_{F} F + \beta_{H} H + \beta_{g \times H} (g \times H)}
 Then an interaction corrected value of X, \eqn{X - \beta_(g \times H)(g \times H)}
 is used to form strata using the ranked method.
