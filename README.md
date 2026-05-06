@@ -309,7 +309,7 @@ summ_gxe_interaction <- create_nlmr_summary(
 )
 ```
 
-In the ranked method, `bx` sweeps dramatically across strata (even
+In the ranked method, `bx` varies across strata (even
 turning negative in the lowest strata) because the strata are confounded
 with the modifier. The interaction method recovers approximately
 constant `bx` values close to the true main effect of 0.25:
