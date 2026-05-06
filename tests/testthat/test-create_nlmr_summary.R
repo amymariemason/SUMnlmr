@@ -6,7 +6,6 @@ library(SUMnlmr)
 test_that("creates correct summary",{
   set.seed(1234)
   test_data<-generated_data
-  test_data$y.bin<-stats::rbinom(size=1, p=0.5, n=10000)
   expect_snapshot_output(create_nlmr_summary(y = test_data$log.Y,
                                                         x = test_data$X,
                                                         g = test_data$g,
@@ -19,7 +18,6 @@ test_that("creates correct summary",{
 test_that("creates correct summary2",{
   set.seed(1234)
   test_data<-generated_data
-  test_data$y.bin<-stats::rbinom(size=1, p=0.5, n=10000)
 
   expect_snapshot_output(create_nlmr_summary(y = test_data$y.bin,
                                              x = test_data$X,
@@ -203,7 +201,6 @@ test_that("creates custom stratification inputs", {
 test_that("gxe inputs run for gaussian, binomial and coxph", {
   set.seed(1234)
   test_data <- generated_data
-  test_data$y.bin <- stats::rbinom(size = 1, p = 0.5, n = 10000)
   test_data$time <- test_data$log.Y + 10
   y_surv <- survival::Surv(time = test_data$time, event = test_data$y.bin)
 
