@@ -399,9 +399,9 @@ if (!is.na(seed)) { set.seed(seed) }
 
   # F4: fit exposure-on-g model depending on if covariates
   # and if controls only
-  fit_x_on_g <- function(x, y, g, covar, controlsonly, idx) {
+  fit_x_on_g <- function(x, y, g, covar, controlsonly, idx, family) {
     if (!any(idx)) stop("No observations in this stratum.")
-    if (isTRUE(controlsonly)) {
+    if (isTRUE(controlsonly) && family %in% c("binomial", "coxph")) {
       if (is.null(y)) stop("y must be provided when controlsonly=TRUE")
       idx <- idx & (y == 0)
       if (!any(idx)) stop("No controls in this stratum (after applying y==0).")
@@ -473,7 +473,8 @@ if (!is.na(seed)) { set.seed(seed) }
     mod_x <- fit_x_on_g(x=x, g=g,
                         covar=covar,
                         idx= idx, y = y,
-                        controlsonly = controlsonly)
+                        controlsonly = controlsonly,
+                        family = family)
     x_g <- coef_se_g(mod_x)
     bx[j]   <- x_g$b
     bxse[j] <- x_g$se
