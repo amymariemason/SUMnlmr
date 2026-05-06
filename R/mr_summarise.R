@@ -34,7 +34,7 @@
 #'
 #'The final method \code{"interaction"} is an extension of the ranked method developed
 #'specifically to mitigate GxE-induced bias in that method, as detailed in
-#'Zhou et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.2634464>.
+#'Zhou et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.26344640>.
 #'In this method, an interaction model is first fitted using two
 #'additional matrices, passed using the `gxe_covar` (F, covariates) and
 #'`gxe_interaction` (H, effect modifiers).
