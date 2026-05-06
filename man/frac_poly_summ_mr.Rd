@@ -6,12 +6,12 @@
 data}
 \usage{
 frac_poly_summ_mr(
-  summ = NULL,
   by = NULL,
   bx = NULL,
   byse = NULL,
   bxse = NULL,
   xmean = NULL,
+  summ = NULL,
   method = "FE",
   d = "both",
   powers = c(0, -2, -1.5, -1, -0.5, 1, 2),
