@@ -295,7 +295,7 @@ if (!is.na(seed)) { set.seed(seed) }
        y = y, x = x, g = g,
        covar = covar, gxe_covar=NULL,
        gxe_interaction=NULL,
-       q = q, controlsonly=controlsonly
+       q = q, controlsonly=controlsonly, family=family
      )
      x0q <- ivf$x0q
    }else if(strata_method=="ranked") {
@@ -315,7 +315,7 @@ if (!is.na(seed)) { set.seed(seed) }
      y = y, x = x, g = g,
      covar = NULL, gxe_covar=gxe_covar,
      gxe_interaction=gxe_interaction,
-     q = q, controlsonly=controlsonly
+     q = q, controlsonly=controlsonly, family=family
    )
    x0 <- ivf$x0
    ranked<- calculate_ranked_strata(exp_var=x0,
@@ -529,7 +529,7 @@ if (!is.na(seed)) { set.seed(seed) }
     xcoef_sub <- bx
     xcoef_sub_se <- bxse
     p_het <- 1 - pchisq(rma(xcoef_sub, vi = (xcoef_sub_se)^2)$QE,
-                        df = (q - 1)
+                        df = (quant - 1)
     )
     p_het_trend <- rma.uni(xcoef_sub ~ xmean,
                            vi = xcoef_sub_se^2,

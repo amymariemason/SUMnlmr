@@ -15,8 +15,11 @@
 #' @param gxe_covar a matrix of covariates for use in the interaction correction
 #' @param gxe_interaction a matrix of covariates to use as interaction terms in the interaction correction
 #' @param controlsonly whether to estimate the gx association in all people,
-#' or in controls only. This is set to TRUE by default, but has no effect if
-#' family is gaussian.
+#' or in controls only. This is set to TRUE by default, but only takes effect
+#' when \code{family} is \code{"binomial"} or \code{"coxph"}.
+#' @param family the outcome family; one of \code{"gaussian"} (default),
+#' \code{"binomial"}, or \code{"coxph"}. Controls-only filtering is only
+#' applied for \code{"binomial"} or \code{"coxph"} outcomes.
 #' @return \item{xcoef}{the association between the exposure and the instrument}
 #' @return \item{x0}{the IV-free exposure if covar is supplied OR
 #' the interaction free exposure if an interaction term is supplied.}
@@ -31,7 +34,8 @@ iv_free <- function(y,
                     gxe_covar=NULL,
                     gxe_interaction=NULL,
                     q=10,
-                    controlsonly=T){
+                    controlsonly=T,
+                    family="gaussian"){
   ##### build dataframe for model
 
   n <- length(x)
@@ -74,7 +78,7 @@ iv_free <- function(y,
   ###### choose subset of data frame, if controls only selected
 
   fit_idx <- rep(TRUE, n)
-  if (isTRUE(controlsonly)) {
+  if (isTRUE(controlsonly) && family %in% c("binomial", "coxph")) {
     fit_idx <- (y == 0)
     if (!any(fit_idx)) stop("controlsonly=TRUE but there are no controls (y==0).")
   }
