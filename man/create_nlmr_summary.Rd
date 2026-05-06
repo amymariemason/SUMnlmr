@@ -2,22 +2,27 @@
 % Please edit documentation in R/mr_summarise.R
 \name{create_nlmr_summary}
 \alias{create_nlmr_summary}
-\title{Creation of summarised mendelian randomisation local estimates}
+\title{Creation of summarized Mendelian randomization local estimates}
 \usage{
 create_nlmr_summary(
   y,
   x,
   g,
   covar = NULL,
+  gxe_covar = NULL,
+  gxe_interaction = NULL,
+  strata_method = "ranked",
+  x_corrected = NULL,
+  x_strata = NULL,
   family = "gaussian",
   controlsonly = FALSE,
-  q,
+  q = 10,
   prestrat = 1,
-  strata_method = "ranked",
   strata_bound = c(0.2, 0.1, 0.8, 0.9),
   extra_statistics = FALSE,
   report_GR = FALSE,
   report_het = FALSE,
+  return_assignment = FALSE,
   seed = 1234
 )
 }
@@ -28,29 +33,54 @@ create_nlmr_summary(
 
 \item{g}{the instrumental variable.}
 
-\item{covar}{a matrix of covariates.}
+\item{covar}{An optional matrix of covariates used in deriving the stratification
+and the genetic associations with the exposure and the outcome within the strata.
+When using \code{"interaction"} method, these covariates are only used in the
+genetic association calculation with the outcome and exposure in each strata,
+not in the creation of the strata.}
 
-\item{family}{a description of the error distribution and link function to be used in the model.
-This is a character string naming either the gaussian
-(i.e. "gaussian" for continuous outcome data) or binomial (i.e. "binomial" for
-binary outcome data) family function. "Coxph" can be used to fit survival data
-\itemize{
-\item in this case y must be a Surv object.
-}}
+\item{gxe_covar}{An optional matrix of covariates used in deriving the
+stratification when using the \code{"interaction"} method. See details.}
 
-\item{controlsonly}{whether to estimate the gx association in all people,
-or in controls only. This is set to FALSE as default.
-It has no effect if family is set to "gaussian"}
+\item{gxe_interaction}{An optional matrix of covariates used as effect
+modifiers in deriving the stratification when using the \code{"interaction"}
+method. See details.}
 
-\item{q}{the number of quantiles the exposure distribution is to be split
-into. Within each quantile a causal effect will be fitted, known as a
+\item{strata_method}{What method to use for determining strata. There are
+three options \code{"residual"}, \code{"ranked"}, \code{"interaction"}.
+See details for a longer explanation of these methods. By default
+this is set to \code{"ranked"}.}
+
+\item{x_corrected}{An optional numeric vector used if method is \code{"ranked"}.
+This will use these alternative values in the ranked method in place of the
+exposure in the stratification calculation.
+This can also be used as a way of creating strata with your own interaction
+model - supply the interaction corrected exposure values here.}
+
+\item{x_strata}{An optional numeric vector used to replace the stratification
+calculation with the supplied strata assignment. Only use this if you have
+precalculated the strata and just want the genetic associations within those strata.}
+
+\item{family}{A description of the error distribution and link function to be
+used in the model. It must be one of \code{"gaussian"}, \code{"binomial"} or \code{"coxph"}.
+The \code{"gaussian"} option should be used for continuous outcome data and will fit linear
+regression models. The \code{"binomial"} option should be used to fit logistic regression models to
+binary outcome data. The \code{"coxph"} option should be used to fit a Cox proportional hazards
+model for a time-to-event outcome - in this case the outcome \code{y} must be a \code{Surv} object.}
+
+\item{controlsonly}{Only applied if family is \code{"binomial"} or \code{"coxph"}.
+If \code{TRUE}, the genetic associations with the exposure are calculated in the controls only.}
+
+\item{q}{The number of quantiles the exposure distribution is to be split
+into. Within each quantile a causal effect will be estimated, known as a
 localised average causal effect (LACE). The default is deciles (i.e. 10
 quantiles).}
 
-\item{prestrat}{the proportional size of pre-strata in the doubly-ranked
-method. If prestrat = 1 (default), then pre-strata will contain
+\item{prestrat}{Only applied if method is \code{"ranked"}.
+The proportional size of pre-strata in the doubly-ranked method.
+If \code{prestrat = 1} (default), then pre-strata will contain
 the number of individuals equal to the number of strata, and 1 individual
-from each pre-stratum is selected into each stratum. If prestrat = 10, then
+from each pre-stratum is selected into each stratum. If \code{prestrat = 10}, then
 pre-strata contain 10 times the number of individuals as the number of
 strata, and 10 individuals from each pre-stratum are selected into each
 stratum. Larger pre-strata can improve the differentiation between
@@ -58,50 +88,110 @@ pre-strata, although if pre-strata are too large such that the instrument
 values vary strongly within pre-strata, then the benefit of the doubly-ranked
 method is lost.}
 
-\item{strata_method}{what method to use for determining strata. By default
-this is set to "ranked", using Haodong Tian's double ranked version to calculate
-strata. The alternative is "residual" for determining the strata from the residual of the
-exposure regressed on the instrument (As in Statley and Burgess paper). The
-residual method relies on a constant relationship between the instrument and the
-exposure across the range of the exposure.}
-
-\item{strata_bound}{controls what range to use for the LACE estimates in graphs display.
-By default this is set to restricted, taking the 10th and 90th percentile of
-internal strata and the 20th and 80th for the bottom of the lowest strata and
-top of the highest strata. It is a vector taking the percentiles for the
-lowers bounds of the bottom and then other strata and then upper bounds of
-top and other strata.
-This only impacts the "max" and "min" values for the summary table
-This can be overridden in piecewise_summ_mr by using the xbreaks argument to
-hardset different breakpoints or replacing default with c(0,0,1,1) to return
-to true max and minimum}
+\item{strata_bound}{This controls what range to use for the LACE estimates in
+the graphical display. By default, this is taken conservatively as the 10th and
+90th percentile of internal strata and the 20th and 80th for the bottom of the
+lowest stratum and top of the highest stratum. It is supplied as a vector of percentiles
+(lower bottom stratum, lower other, higher top stratum, higher other).
+This only impacts the \code{"max"} and \code{"min"} values for the summary table.
+This can be overridden in \code{piecewise_summ_mr()} by using the \code{xbreaks} argument to
+hardset different breakpoints or replacing default with \code{c(0,0,1,1)} to return
+to true max and minimums.}
 
 \item{extra_statistics}{This will add a second output reporting extra
-statistics for each strata. These include the true max and min of each
-strata (regardless of strata_bound setting) and the f statistic and p-value
-for the regressions}
+statistics for each stratum. These include the true max and min of the
+strata (regardless of strata_bound setting) and the F statistic and p-value
+for the regressions.}
 
-\item{report_GR}{This will add the Gelman-Rubin statistics for each strata
-to the output. Note this only works if strata_method="ranked".}
+\item{report_GR}{This will add the Gelman-Rubin statistics for each stratum
+to the output. Note this only works if the strata method is \code{"ranked"}.}
 
 \item{report_het}{This will add p-values for assessing the heterogeneity of
 the instrument - exposure relationship.
 The first column is the p-value of the Cochran Q heterogeneity test (Q);
 the second column is the p-value from the trend test (trend).}
 
-\item{seed}{The random seed to use when generating the quantiles (for reproducibility). If set to \code{NA}, the random seed will not be set.}
+\item{return_assignment}{Reports the strata assignment of each participant,
+to assist in examining stratum distributions.}
+
+\item{seed}{The random seed to use when generating the quantiles
+(for reproducibility). If set to \code{NA}, the random seed will not be set.}
 }
 \value{
-model the model specifications. The first column is the number of
-quantiles (q); the second column is the position used to relate x to the LACE
-in each quantiles (xpos); the third column is the type of confidence
-interval constructed (ci); the fourth column is the number of bootstrap
-replications performed (nboot).
+A list containing summary data and optional diagnostics.
+\itemize{
+\item \code{summary}: data frame with one row per stratum containing
+\code{bx}, \code{by}, \code{bxse}, \code{byse}, \code{xmean}, \code{xmin}, and
+\code{xmax}.
+\item \code{Dropped}: always returned; integer giving the number of
+individuals removed due to missing values in any of \code{y}, \code{x},
+\code{g}, \code{covar}, \code{gxe_covar}, \code{gxe_interaction},
+\code{x_corrected}, or \code{x_strata}. A message is also printed when
+this value is greater than zero.
+\item \code{strata_statistics}: returned when
+\code{extra_statistics = TRUE}; per-stratum min/max of \code{x} and \code{y},
+mean \code{x}, and exposure-model F statistic.
+\item \code{GR_max}: maximum Gelman--Rubin statistic for ranked strata.
+\item \code{GR_results}: full Gelman--Rubin output when
+\code{report_GR = TRUE} and \code{strata_method = "ranked" or "interaction"}.
+\item \code{Heterogeneity_results}: heterogeneity/trend test p-values when
+\code{report_het = TRUE} and \code{strata_method = "ranked" or "interaction"}.
+\item \code{Strata_assignment}: strata assignment for each participant when
+return_assignment = TRUE
+}
 }
 \description{
-create_nlmr_summary takes individual level data and creates summerised
-dataset, ready to save and share for summarised nlmr
+create_nlmr_summary Takes individual level data and creates summarized
+dataset, ready to save and share for summarized non-linear analysis
+}
+\details{
+\subsection{Stratification models}{
+
+Given vectors of an exposure \code{x}, an outcome \code{y} and an instrument \code{g}, as
+well as a matrix of covariates \code{E}, this package implements
+several possible models for stratifying over the exposure values.
+
+The simplest of these the residual method (\code{"residual"}), as described in
+Staley and Burgess,2017 \url{doi:https://doi.org/10.1002/gepi.22041}. where we
+regress \code{x} on the genetic instrument and the covariate matrix \code{E}
+\deqn{x = \beta_0 + \beta_g g + \beta_E E}
+where \verb{\\beta_E} is a suitable vector of coefficients, and calculate the residual value
+\deqn{x_{resid} = x- (\beta_0 + \beta_g G + \beta_E E)}
+Once the strata are formed, the genetic associations with \code{x} and \code{y} are calculated,
+including the covariates matrix E e.g.
+\deqn{x = \beta_1 + \beta_x g + \beta_{E1} E}
+\deqn{y = \beta_2 + \beta_y g + \beta_{E2} E}
+with \eqn{\beta_x} and \eqn{\beta_y} returned for each stratum.
+This method performs poorly unless the genetic effects on the exposure are constant.
+This assumption is often implausible, and thus this approach is not recommended.
+See Burgess, 2023 \url{doi:https://doi.org/10.1159/000531659}.
+
+The second option is \code{"ranked"}, using Haodong Tian's double ranked method
+to calculate strata. See Tian et al, 2022 <doi: https://doi.org/10.1101/2022.06.28.497930>
+for more details on this method. However, there are concerns about this method's application, particularly in UK Biobank,
+with thanks to Hamiliton et al, 2023 <doi: https://doi.org/10.1007/s10654-024-01113-9> for their
+examples of this. In particular, this method performs poorly when there is a
+GxE interaction, as explained in Zhao et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.26344640>
+
+The final method \code{"interaction"} is an extension of the ranked method developed
+specifically to mitigate GxE-induced bias in that method, as detailed in
+Zhou et al, 2026 <doi: https://doi.org/10.64898/2026.01.22.26344640>.
+In this method, an interaction model is first fitted using two
+additional matrices, passed using the \code{gxe_covar} (F, covariates) and
+\code{gxe_interaction} (H, effect modifiers).
+\deqn{x = \beta_0 + \beta_g g + \beta_{F} F + \beta_{H} H + \beta_{g \times H} (g \times H)}
+Then an interaction corrected value of X, \eqn{X - \beta_(g \times H)(g \times H)}
+is used to form strata using the ranked method.
+Within the strata, the associations with exposure and outcome are then
+calculated using the usual \code{covar} covariate matrix E e.g.
+\deqn{x = \beta_1 + \beta_x g + \beta_{E1} E}
+\deqn{y = \beta_2 + \beta_y g + \beta_{E2} E}
+with \eqn{\beta_x} and \eqn{\beta_y} returned for each stratum.
+
+The two matrices supplied in \code{gxe_covar} and \code{gxe_interaction} are used to allow
+flexibility in choice of models for correcting potential GxE interactions.
+}
 }
 \author{
-Amy Mason, leaning heavily on work by James Statley and Matt Arnold
+Amy Mason
 }

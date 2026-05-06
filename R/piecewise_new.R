@@ -16,6 +16,9 @@
 #' @param bxse vector of standard errors of gene-exposure associations.
 #' @param xmean average value of the original exposure in each iv-free strata
 #' (or whatever summary of the exposure level in the stratum is desired).
+#'@param summ a dataframe contains bx, by, bxse, byse, xmean. This is the
+#' summary output of the `create_nlmr_summary` function; either as the full output or
+#' just passing the summary part.
 #' @param xmin min value of the original exposure in each stratum (see note)
 #' @param xmax max value of the original exposure in each stratum (see note)
 #' @param xbreaks break points for the stratum x values (see note)
@@ -70,13 +73,14 @@
 #' @importFrom metafor rma
 #' @importFrom metafor rma.uni
 #' @export
-piecewise_summ_mr <- function(by,
-                              bx,
-                              byse,
-                              bxse,
-                              xmean,
-                              xmin,
-                              xmax,
+piecewise_summ_mr <- function(by= NULL,
+                              bx= NULL,
+                              byse=NULL,
+                              bxse=NULL,
+                              xmean=NULL,
+                              xmin=NULL,
+                              xmax= NULL,
+                              summ=NULL,
                               xbreaks = NULL,
                               family = "gaussian",
                               average.exposure.associations = FALSE,
@@ -96,6 +100,38 @@ piecewise_summ_mr <- function(by,
 }
 if (!is.na(seed)) { set.seed(seed) }
 
+  ##### Allow direct use of create_nlmr_summary output #####
+  # If `by` received a data frame / list instead of a numeric vector, treat it
+  # as the summary object (supports positional call: piecewise_summ_mr(summ_obj))
+  if (is.null(summ) && !is.null(by) && (is.data.frame(by) || is.list(by))) {
+    summ <- by
+    by   <- NULL
+  }
+
+  if (is.list(summ) && !is.data.frame(summ) && "summary" %in% names(summ)) {
+    summ <- summ$summary
+  }
+  if (is.data.frame(summ)) {
+    expected_cols <- c("by", "bx", "byse", "bxse", "xmean", "xmin", "xmax")
+    missing_cols <- setdiff(expected_cols, names(summ))
+    if (length(missing_cols) > 0) {
+      stop(
+        "When first argument is a data frame/list summary, it must contain columns: ",
+        paste(expected_cols, collapse = ", "),
+        ". Missing: ",
+        paste(missing_cols, collapse = ", ")
+      )
+    }
+    bx <- summ$bx
+    byse <- summ$byse
+    bxse <- summ$bxse
+    xmean <- summ$xmean
+
+
+    by <- summ$by
+    xmin <- summ$xmin
+    xmax <- summ$xmax
+  }
 
   ##### Error messages #####
 

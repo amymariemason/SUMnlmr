@@ -10,6 +10,6 @@ upfun(vec)
 \item{vec}{input vector}
 }
 \description{
-function to obtain the upper coefficient values (i.e. {a} in Text S1) for
+function to obtain the upper coefficient values (i.e. \code{a} in Text S1) for
 each pre-strata
 }

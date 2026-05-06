@@ -2,21 +2,6 @@
 #need to install that package in order to create summarised data
 # https://github.com/jrs95/nlmr for original functions
 
-#' Hamardman product
-#'
-#' hamardman.prod computes the Hamardman product of a vector of regression
-#' coefficients and a matrix of covariates.
-#' @param coef vector of regression coefficients.
-#' @param covar a matrix of covariates
-#' @author James R Staley <js16174@bristol.ac.uk>
-#' @export
-hamardman.prod <- function(coef, covar){
-  if(length(coef)!=ncol(covar)) stop("the number of coefficients is greater than
-                                     the number of covariates")
-  results <- reprow(coef,nrow(covar))*covar
-  return(results)
-}
-
 #' IV-free exposure
 #'
 #' iv_free computes the IV-free exposure.
@@ -27,13 +12,17 @@ hamardman.prod <- function(coef, covar){
 #' into. The default is deciles (i.e. 10
 #' quantiles).
 #' @param covar a matrix of covariates.
-#' @param family a description of the error distribution and link function to be
-#'  used in the model (either "gaussian" or "binomial" can be specified).
+#' @param gxe_covar a matrix of covariates for use in the interaction correction
+#' @param gxe_interaction a matrix of covariates to use as interaction terms in the interaction correction
 #' @param controlsonly whether to estimate the gx association in all people,
-#' or in controls only. This is set to TRUE by default, but has no effect if
-#' family is gaussian.
+#' or in controls only. This is set to TRUE by default, but only takes effect
+#' when \code{family} is \code{"binomial"} or \code{"coxph"}.
+#' @param family the outcome family; one of \code{"gaussian"} (default),
+#' \code{"binomial"}, or \code{"coxph"}. Controls-only filtering is only
+#' applied for \code{"binomial"} or \code{"coxph"} outcomes.
 #' @return \item{xcoef}{the association between the exposure and the instrument}
-#' @return \item{x0}{the IV-free exposure.}
+#' @return \item{x0}{the IV-free exposure if covar is supplied OR
+#' the interaction free exposure if an interaction term is supplied.}
 #' @return \item{x0q}{the quantiles of x0.}
 #' @export
 #' @author Amy Mason <am2609@medschl.cam.ac.uk> based on similar function in nlmr
@@ -42,59 +31,121 @@ iv_free <- function(y,
                     x,
                     g,
                     covar=NULL,
+                    gxe_covar=NULL,
+                    gxe_interaction=NULL,
                     q=10,
-                    family="gaussian",
-                    controlsonly=T){
-  if(family=="gaussian"){
-    if(!is.null(covar)){
-      model <- lm(x~g+covar)
-    }else{
-        model <- lm(x~g)
-    }
-    if(any(is.na(model$coef))) stop("there are missing regression coefficients
-                                    in the regression of the exposure on the
-                                    instrument and covariates")
-    x0 <- resid(model)
+                    controlsonly=T,
+                    family="gaussian"){
+  ##### build dataframe for model
+
+  n <- length(x)
+  if (length(g) != n || length(y) != n) stop("y, x, and g must have the same length.")
+
+  df <- data.frame(y = y, x = x, g = g)
+
+  # Add covariates (matrix/data.frame with columns)
+  if (!is.null(covar)) {
+    covar <- as.data.frame(covar)
+    if (nrow(covar) != n) stop("covar must have the same number of rows as x.")
+    # Avoid name clashes
+    names(covar) <- make.names(names(covar), unique = TRUE)
+    df <- cbind(df, covar)
   }
-  if(family=="binomial"){
-    if (controlsonly==T){
-      if(!is.null(covar)){
-        model <- lm(x[y == 0] ~ g[y == 0] + covar[y == 0, , drop = F])
-        if(any(is.na(model$coef))) stop("there are missing regression coefficients
-                                    in the regression of the exposure on the
-                                    instrument and covariates in the controls")
-        x0 <- x - (model$coef[1] + model$coef[2]*g +
-                rowSums(hamardman.prod(model$coef[3:length(model$coef)],covar)))
-      }else{
-        model <- lm(x[y == 0] ~ g[y == 0])
-        if(any(is.na(model$coef))) stop("there are missing regression
-                                          coefficients in the regression of the
-                                          exposure on the instrument and
-                                        covariates in the controls")
-      x0 <- x - (model$coef[1] + model$coef[2]*g)
-      }
-    }else{
-      if(!is.null(covar)){
-        model <- lm(x ~ g + covar)
-        if(any(is.na(model$coef))) stop("there are missing regression coefficients
-                                    in the regression of the exposure on the
-                                    instrument and covariates in the controls")
-        x0 <- x - (model$coef[1] + model$coef[2]*g +
-                   rowSums(hamardman.prod(model$coef[3:length(model$coef)],covar)))
-      }else{
-        model <- lm(x ~ g)
-        if(any(is.na(model$coef))) stop("there are missing regression
-                                          coefficients in the regression of the
-                                          exposure on the instrument and
-                                        covariates in the controls")
-        x0 <- x - (model$coef[1] + model$coef[2]*g)
-      }
-    }
+
+  # Add gxe_covariates (matrix/data.frame with columns)
+  if (!is.null(gxe_covar)) {
+    gxe_covar <- as.data.frame(gxe_covar)
+    if (nrow(gxe_covar) != n) stop("covar must have the same number of rows as x.")
+    # Avoid name clashes
+    names(gxe_covar) <- make.names(names(gxe_covar), unique = TRUE)
+    # prefix to avoid clashes with covars
+    names(gxe_covar) <- paste0("cov_", names(gxe_covar))
+    df <- cbind(df, gxe_covar)
   }
-  xcoef <- model$coef[2]
+
+  # Add interaction variables (vector or matrix/data.frame)
+  if (!is.null(gxe_interaction)) {
+    gxe_interaction <- as.data.frame(gxe_interaction)
+    if (nrow(gxe_interaction) != n) {
+      stop("interaction must have the same number of rows as x.")
+    }
+    names(gxe_interaction) <- make.names(names(gxe_interaction), unique = TRUE)
+    # prefix to avoid clashes with covars
+    names(gxe_interaction) <- paste0("int_", names(gxe_interaction))
+    df <- cbind(df, gxe_interaction)
+  }
+
+  ###### choose subset of data frame, if controls only selected
+
+  fit_idx <- rep(TRUE, n)
+  if (isTRUE(controlsonly) && family %in% c("binomial", "coxph")) {
+    fit_idx <- (y == 0)
+    if (!any(fit_idx)) stop("controlsonly=TRUE but there are no controls (y==0).")
+  }
+
+  #### build formula
+
+  rhs_terms <- c("g")
+
+  if (!is.null(covar) && !is.null(gxe_interaction)) {
+    stop("cannot supply both covar and interaction matrices to iv_free")
+  }
+
+  if (!is.null(covar)) {
+    rhs_terms <- c(rhs_terms, names(covar))
+  }
+
+  if (!is.null(gxe_covar)) {
+    rhs_terms <- c(rhs_terms, names(gxe_covar))
+  }
+
+  if (!is.null(gxe_interaction)) {
+    int_names <- names(gxe_interaction)
+    # main effects + interactions with g
+    rhs_terms <- c(rhs_terms, int_names, paste0("g:", int_names))
+  }
+
+  fml <- reformulate(rhs_terms, response = "x")
+
+  # Note: how to pass error message if model fails to converge because same terms
+  # passed in gxe_covar and gxe_interaction
+
+  ### fit linear model
+
+  model <- lm(fml, data = df, subset = fit_idx)
+
+  if (anyNA(coef(model))) {
+    stop("There are missing regression coefficients in the regression of the exposure on the instrument and covariates/interactions.")
+  }
+  ### predict residuals
+
+  pred_all <- predict(model, newdata = df)
+  if(is.null(gxe_interaction)){
+  x0 <- df$x - pred_all
+  } else {
+    coefs<-coef(model)
+    get_int_coef <- function(v) {
+      name1 <- paste0("g:", v)
+      name2 <- paste0(v, ":g")
+
+      if (name1 %in% names(coefs)) return(coefs[[name1]])
+      if (name2 %in% names(coefs)) return(coefs[[name2]])
+
+      stop("Missing interaction coefficient for ", v)
+    }
+    gxe_values<- sapply(int_names, get_int_coef)
+    gE <- as.matrix(gxe_interaction) * df$g
+    interaction_component <- as.vector(gE %*%  gxe_values)
+    x0 <- df$x - interaction_component
+  }
   quantiles <- quantile(x0, probs=seq(0,1,1/q))
+  # Ensure strictly increasing breaks in case many ties
+  quantiles <- unique(quantiles)
+  if (length(quantiles) < q+1) {
+    stop("Residuals have too little variation to compute quantile bins.")
+  }
   x0q <- cut(x0, quantiles, include.lowest=T, labels=F)
-  results <- list(xcoef=xcoef, x0=x0, x0q=x0q)
+  results <- list(x0=x0, x0q=x0q)
   return(results)
 }
 

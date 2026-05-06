@@ -21,7 +21,7 @@ max_GR is the maximum G-R statistic accross all strata
 statified_strata is a list of the strata where the GR-statistic meets
 the threshold limit
 
-GR_values is a table of the {a} and {b} values for each strata
+GR_values is a table of the \code{a} and \code{b} values for each strata
 }
 \description{
 getGRvalues calculates the the Gelman--Rubin (GR) statistics

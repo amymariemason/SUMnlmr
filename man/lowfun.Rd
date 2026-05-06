@@ -11,5 +11,5 @@ lowfun(vec)
 }
 \description{
 function to obtain the lower coefficient values
-(i.e. {b} in Text S1) for each pre-strata
+(i.e. \code{b} in Text S1) for each pre-strata
 }

@@ -6,11 +6,12 @@
 data}
 \usage{
 frac_poly_summ_mr(
-  by,
-  bx,
-  byse,
-  bxse,
-  xmean,
+  by = NULL,
+  bx = NULL,
+  byse = NULL,
+  bxse = NULL,
+  xmean = NULL,
+  summ = NULL,
   method = "FE",
   d = "both",
   powers = c(0, -2, -1.5, -1, -0.5, 1, 2),
@@ -44,6 +45,10 @@ frac_poly_summ_mr(
 
 \item{xmean}{average value of the exposure in each stratum (or whatever
 summary of the exposure level in the stratum is desired).}
+
+\item{summ}{a dataframe contains bx, by, bxse, byse, xmean. This is the
+summary output of the \code{create_nlmr_summary} function; either as the full output or
+just passing the summary part.}
 
 \item{method}{meta-regression method parsed to the rma package. The default
 is fixed-effects ('FE').}

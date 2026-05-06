@@ -4,6 +4,7 @@
 # SUMnlmr
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 The goal of SUMnlmr is to allow investigations of potentially non-linear
@@ -14,13 +15,13 @@ level genetic data.
 It is based on the existing package for individual data by James Staley:
 nlmr (available from <https://github.com/jrs95/nlmr> ).
 
-The core concept is to split the process into two distinct halfs: one
+The core concept is to split the process into two distinct halves: one
 requiring individual level data, which is converted into a
 semi-summarized form (create_nlmr_summary) by dividing the population
 into strata based on the IV-free exposure. Associations with the
 exposure and the outcome are estimated in each stratum. In the second
 half, this semi-summarized form can then be shared, without compromising
-patient privacy, and investigated seperately using two IV methods: a
+patient privacy, and investigated separately using two IV methods: a
 fractional polynomial method (frac_poly_summ_mr) and a piecewise linear
 method (piecewise_summ_mr). Both methods calculate a localised causal
 effect (LACE). The piecewise method fits a continuous piecewise linear
@@ -29,11 +30,19 @@ the best 1 or 2 term fractional polynomial.
 
 ## Functions
 
-*create_nlmr_summary* - prepares individual level data into
-semi-summarised form, ready to fit nlmr models. *fracpoly_summ_mr* -
-this method performs IV analysis using fractional polynomials
-*piecewise_summ_mr* - this method performs IV analysis using piecewise
-linear function
+- *create_nlmr_summary* — prepares individual level data into
+  semi-summarised form, ready to fit nlmr models. Supports three
+  stratification methods:
+  - `"residual"` — the original IV-free residual approach (Staley &
+    Burgess, 2017)
+  - `"ranked"` — the doubly-ranked method (Tian et al., 2022)
+  - `"interaction"` — an extension of the ranked method that corrects
+    for GxE-induced bias by removing the interaction component from the
+    exposure before stratification (Zhou et al., 2026)
+- *frac_poly_summ_mr* — performs IV analysis using fractional
+  polynomials.
+- *piecewise_summ_mr* — performs IV analysis using a piecewise linear
+  function.
 
 ## Installation
 
@@ -48,28 +57,30 @@ devtools::install_github("amymariemason/SUMnlmr")
 ## Example 1: Summarizing data
 
 This is a basic example which shows you how to create the
-semi-summarized data form. First we create some practise data:
+semi-summarized data form. First we create some practice data:
 
 ``` r
-library(SUMnlmr)
+devtools::load_all()
+#> ℹ Loading SUMnlmr
+#library(SUMnlmr)
 ## create some data to practise on
 test_data<-create_ind_data(N=10000, beta2=2, beta1=1)
 # this creates quadratic.Y  = x + 2x^2 + errorY 
-head(test_data)
-#>   g           u      errorX      errorY        X linear.Y quadratic.Y   sqrt.Y
-#> 1 0 0.855429126 0.281309187 -0.08097275 3.136738 3.740109    23.41836 2.374454
-#> 2 1 0.701815092 0.123178790  3.82412182 3.074994 7.460568    26.37174 6.139140
-#> 3 0 0.844505128 0.269158502 -1.22821961 3.113664 2.561048    21.95085 1.211942
-#> 4 0 0.894532484 1.062569070 -1.35964713 3.957102 3.313080    34.63039 1.345225
-#> 5 1 0.263973312 0.002066912 -0.18735766 2.516040 2.539861    15.20078 1.610024
-#> 6 0 0.001373215 0.502596895 -0.39162587 2.503970 2.113443    14.65318 1.191866
-#>       log.Y threshold.Y fracpoly.Y
-#> 1 1.7465541    3.740109   6.026476
-#> 2 5.5088768    7.460568   9.707174
-#> 3 0.5831845    2.561048   4.832648
-#> 4 0.7314907    3.313080   6.064104
-#> 5 0.9465073    2.539861   4.385234
-#> 6 0.5273502    2.113443   3.949198
+round(head(test_data), 2)
+#>   g    u errorX errorY    X linear.Y quadratic.Y sqrt.Y log.Y threshold.Y
+#> 1 2 0.51   5.90  -0.66 8.91     8.66      167.33   2.73  1.94        8.66
+#> 2 0 0.11   3.52   0.74 5.63     6.46       69.95   3.20  2.56        6.46
+#> 3 1 0.28   1.82  -0.04 4.35     4.53       42.33   2.26  1.65        4.53
+#> 4 0 0.32   1.51  -0.49 3.82     3.59       32.84   1.72  1.10        3.59
+#> 5 1 0.55   3.06  -0.73 5.86     5.57       74.26   2.13  1.48        5.57
+#> 6 0 0.55   0.19   0.50 2.75     3.69       18.76   2.60  1.96        3.69
+#>   fracpoly.Y
+#> 1      13.03
+#> 2       9.92
+#> 3       7.47
+#> 4       6.27
+#> 5       9.10
+#> 6       5.71
 ```
 
 Then we use create_nlmr_summary to summarise it.
@@ -87,50 +98,55 @@ summ_data<-create_nlmr_summary(y = test_data$quadratic.Y,
                                 controlsonly = FALSE,
                                 q = 10)
 
-head(summ_data$summary)
-#>          bx       by        bxse       byse    xmean     xmin     xmax
-#> 1 0.2612326 2.896331 0.005904958 0.08345000 2.481251 2.310319 2.747010
-#> 2 0.2663879 3.294415 0.002944422 0.06201941 2.767439 2.545732 2.969957
-#> 3 0.2640439 3.553600 0.002562119 0.05966031 2.976237 2.757302 3.251028
-#> 4 0.2653565 3.624811 0.002238094 0.05932379 3.138063 2.928119 3.320145
-#> 5 0.2591934 3.819073 0.002752244 0.06177890 3.305293 3.093620 3.513066
-#> 6 0.2627541 3.941553 0.003134800 0.06980488 3.512222 3.299559 3.720750
+round(head(summ_data$summary), 2)
+#>     bx   by bxse byse xmean xmin xmax
+#> 1 0.24 2.66 0.01 0.08  2.46 2.30 2.72
+#> 2 0.23 2.75 0.00 0.06  2.76 2.57 2.94
+#> 3 0.22 2.87 0.00 0.06  2.95 2.76 3.12
+#> 4 0.22 2.97 0.00 0.06  3.12 2.94 3.29
+#> 5 0.22 3.25 0.00 0.06  3.30 3.11 3.47
+#> 6 0.23 3.45 0.00 0.07  3.49 3.29 3.69
 ```
 
-If we have co-variants we want to adjust for in our analysis, we need to
+Note 1: This example uses the residual method, which relies on
+parametric assumptions of linearity and homogeneity in the
+instrument-exposure model. We do not believe these conditions are met in
+practice and do not recommend applying this method. We include it here
+for completeness.
+
+If we have covariates we want to adjust for in our analysis, we need to
 include them at this stage.
 
 ``` r
-
+set.seed(9941)
 ## create the summarized form
 summ_covar<-create_nlmr_summary(y = test_data$quadratic.Y,
                                 x = test_data$X,
                                 g = test_data$g,
-                                covar = matrix(data=c(test_data$linear.Y,
-                                                      test_data$sqrt.Y),ncol=2),
+                                covar = matrix(data=c(test_data$linear.Y,                                     test_data$sqrt.Y),ncol=2),
                                 family = "gaussian",
                                 strata_method = "residual", 
                                 q = 10)
-
-head(summ_covar$summary)
-#>            bx         by         bxse        byse    xmean     xmin     xmax
-#> 1 0.015781437 -1.3644384 2.005148e-03 0.287822215 3.559852 2.310319 7.267194
-#> 2 0.008905686 -0.6609827 2.640962e-04 0.019734263 3.093493 2.564498 6.009726
-#> 3 0.008488032 -0.6495883 1.741300e-04 0.013646519 3.191837 2.768207 3.238514
-#> 4 0.008330134 -0.6509645 1.148009e-04 0.009457052 3.385089 2.923985 5.544038
-#> 5 0.008205053 -0.6693591 1.003678e-04 0.008945053 3.511726 3.060263 5.304315
-#> 6 0.008172195 -0.6866536 8.233542e-05 0.007317054 3.703064 3.195215 5.171403
+  
+round(head(summ_covar$summary), 2)
+#>     bx    by bxse byse xmean xmin xmax
+#> 1 0.02 -3.13    0 0.54  3.46 2.30 7.26
+#> 2 0.01 -0.72    0 0.02  2.96 2.57 2.91
+#> 3 0.01 -0.75    0 0.01  3.14 2.76 3.15
+#> 4 0.01 -0.76    0 0.01  3.36 2.91 5.48
+#> 5 0.01 -0.80    0 0.01  3.52 3.05 5.34
+#> 6 0.01 -0.80    0 0.01  3.71 3.18 5.21
 ```
 
-Note: Because the covariants are included as a matrix, lm cannot detect
-factor variables and create automatic dummy variables for them. The
-easiest way to include factor variables is to make these dummy variables
-by hand instead using the
+Note 2: Because the covariates are included as a matrix, lm cannot
+detect factor variables and create automatic dummy variables for them.
+The easiest way to include factor variables is to make these dummy
+variables by hand instead using the
 [model.matrix](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/model.matrix.html)
 command. e.g.
 
 ``` r
-
+set.seed(7778)
 ## create a factor
 test_data$centre<- as.factor(rbinom(nrow(test_data),4, 0.5))
 
@@ -144,45 +160,178 @@ summ_covar2<-create_nlmr_summary(y = test_data$quadratic.Y,
                                  family = "gaussian",
                                  q = 10)
 
-head(summ_covar2$summary)
-#>          bx       by        bxse       byse    xmean     xmin     xmax
-#> 1 0.2625992 2.929787 0.005864756 0.08316279 2.481824 2.310319 2.751725
-#> 2 0.2688530 3.327042 0.002966458 0.06167005 2.771374 2.545798 2.991144
-#> 3 0.2663097 3.580529 0.002603635 0.05905983 2.971824 2.754185 3.234841
-#> 4 0.2641251 3.611746 0.002255262 0.05766441 3.137909 2.928976 3.340057
-#> 5 0.2584143 3.793547 0.002753630 0.06212523 3.305805 3.094169 3.534874
-#> 6 0.2619501 3.936336 0.003100198 0.06851265 3.512687 3.297890 3.729489
+round(head(summ_covar2$summary), 2)
+#>     bx   by bxse byse xmean xmin xmax
+#> 1 0.26 3.09 0.01 0.14  2.57 2.33 2.95
+#> 2 0.24 2.98 0.01 0.16  2.80 2.44 3.17
+#> 3 0.24 3.09 0.01 0.17  2.98 2.63 3.39
+#> 4 0.25 3.43 0.01 0.20  3.16 2.78 3.57
+#> 5 0.25 3.53 0.01 0.23  3.33 2.93 3.78
+#> 6 0.24 3.74 0.02 0.29  3.54 3.09 4.09
 ```
 
 These have used a single genetic variant count, but the method works
-identically with an genetic score function for g instead. Logistic or
-cox models in the G-Y relationship can be used by changing the family
-option - see details in the create_nlmr_summary function description.
+identically with a genetic score function for g instead.
+
+Logistic or Cox models in the G-Y relationship can be used by changing
+the family option - see details in the create_nlmr_summary function
+description.
+
+### Relaxing the parametric assumption: the `"ranked"` method
 
 It is also possible to implement the doubly-ranked method described in
-Haodong’s paper
-<https://www.biorxiv.org/content/10.1101/2022.06.28.497930v1>
+[Tian et al.,
+2022](https://www.biorxiv.org/content/10.1101/2022.06.28.497930v1). This
+replaces the parametric assumptions with a rank-preserving assumption.
+This is currently the default method of the package, but there are
+concerns about this method’s application, particularly in UK Biobank,
+with thanks to Hamilton et al., 2023
+(<https://doi.org/10.1007/s10654-024-01113-9>) for their examples of
+this. In particular, this method performs poorly when there is a GxE
+interaction, as explained in Zhao et al., 2026
+(<https://doi.org/10.64898/2026.01.22.26344640>).
+
+To illustrate, we simulate a population with two unobserved subgroups: a
+low-exposure group where the instrument is weak (`bx` ≈ 0.1) and a
+high-exposure group where the instrument is strong (`bx` ≈ 0.8):
 
 ``` r
 
-## create the summarized form with the doubly ranked method
-summ_ranked<-create_nlmr_summary(y = test_data$quadratic.Y,
-                                x = test_data$X,
-                                g = test_data$g,
-                                covar = matrix(data=c(test_data$linear.Y,
-                                                      test_data$sqrt.Y),ncol=2),
-                                family = "gaussian",
-                                strata_method = "ranked", 
-                                q = 10)
+set.seed(5172)
+N <- 10000
 
-head(summ_ranked$summary)
-#>             bx          by         bxse        byse    xmean     xmin     xmax
-#> 1 0.0004869989 -0.01923869 0.0002690294 0.009948987 2.581953 2.335009 2.972280
-#> 2 0.0003377920 -0.01997351 0.0002656399 0.011834028 2.813561 2.449981 3.197579
-#> 3 0.0004494079 -0.02682389 0.0002455037 0.012129435 2.994767 2.619846 3.382163
-#> 4 0.0005468781 -0.03636720 0.0002573097 0.014348202 3.168038 2.782659 3.568595
-#> 5 0.0009189976 -0.06091405 0.0002527573 0.015822903 3.347678 2.930980 3.787111
-#> 6 0.0013204857 -0.09580564 0.0002923330 0.020148560 3.545190 3.080969 4.055592
+subgroup <- rbinom(N, 1, 0.5)   # unobserved; 50/50 split
+rk_g     <- rbinom(N, 2, 0.3)
+rk_u     <- rnorm(N)
+
+rk_X <- ifelse(subgroup == 0,
+  1 + 0.1 * rk_g + 0.3 * rk_u + abs(rnorm(N, 0, 0.5)),   # low-exposure group
+  6 + 0.8 * rk_g + 0.3 * rk_u + abs(rnorm(N, 0, 0.5)))   # high-exposure group
+rk_Y <- rk_X + 2 * rk_X^2 + 0.8 * rk_u + rnorm(N)
+
+# Residual method — fits one linear g coefficient for the whole population
+summ_rk_resid <- create_nlmr_summary(
+  y = rk_Y, x = rk_X, g = rk_g,
+  family = "gaussian", strata_method = "residual", q = 10
+)
+
+# Ranked method — makes no assumption about the shape of the g-x relationship
+summ_rk_ranked <- create_nlmr_summary(
+  y = rk_Y, x = rk_X, g = rk_g,
+  family = "gaussian", strata_method = "ranked", q = 10
+)
+```
+
+The ranked method correctly shows low `bx` in the low-exposure strata
+(where the instrument is weak) and high `bx` in the high-exposure
+strata. The residual method, forced to use a single average coefficient,
+produces distorted intermediate values throughout:
+
+``` r
+
+data.frame(
+  stratum     = 1:10,
+  bx_residual = round(summ_rk_resid$summary$bx, 2),
+  bx_ranked   = round(summ_rk_ranked$summary$bx, 2)
+)
+#>    stratum bx_residual bx_ranked
+#> 1        1        0.38      0.15
+#> 2        2        0.49      0.14
+#> 3        3        0.50      0.22
+#> 4        4        0.49      0.38
+#> 5        5        0.32      0.47
+#> 6        6        0.58      0.67
+#> 7        7        0.52      0.76
+#> 8        8        0.52      0.74
+#> 9        9        0.52      0.76
+#> 10      10        0.57      0.79
+```
+
+### Correcting for GxE interactions: the `"interaction"` method
+
+This is an extension of the ranked method developed specifically to
+mitigate GxE-induced bias in that method, as detailed in Zhou et al.,
+2026 (<https://doi.org/10.64898/2026.01.22.2634464>). Stratification
+methods can be biased when a covariate modifies the effect of the
+instrument on the exposure (a GxE interaction). The `"interaction"`
+method tries to address this by estimating and removing the interaction
+component from the exposure before stratification.
+
+Two additional matrices are supplied alongside the usual `covar`
+argument:
+
+- `gxe_interaction` (**H**): the effect modifier(s) that interact with
+  `g`
+- `gxe_covar` (**F**, optional): additional covariates for the
+  interaction model that appear as main effects only
+
+The stratification model fitted internally is: **X = β₀ + β_g·g +
+β_F·F + β_H·H + β\_{g×H}·(g×H)**
+
+The corrected exposure **X − β\_{g×H}·(g×H)** is then used to form
+strata via the ranked method. Within-stratum genetic associations are
+estimated using `covar` as usual.
+
+To illustrate the difference, we simulate data where `modifier` strongly
+amplifies the effect of `g` on `X` (GxE coefficient = 1.5, compared to a
+main g effect of 0.25):
+
+``` r
+
+set.seed(8341)
+N <- 10000
+
+gxe_g        <- rbinom(N, 2, 0.3)
+gxe_modifier <- rnorm(N)
+gxe_u        <- runif(N, 0, 1)
+
+# X has a strong GxE: the effect of g on X scales with modifier
+gxe_X <- 2 + gxe_g * (0.25 + 1.5 * gxe_modifier) + gxe_u + rexp(N, 1)
+gxe_Y <- gxe_X + 2 * gxe_X^2 + 0.8 * gxe_u + rnorm(N)
+
+# Ranked method — no correction for the GxE
+summ_gxe_ranked <- create_nlmr_summary(
+  y = gxe_Y, x = gxe_X, g = gxe_g,
+  family        = "gaussian",
+  strata_method = "ranked",
+  q = 10
+)
+
+# Interaction method — corrects for g x modifier before stratifying
+summ_gxe_interaction <- create_nlmr_summary(
+  y               = gxe_Y,
+  x               = gxe_X,
+  g               = gxe_g,
+  gxe_interaction = matrix(gxe_modifier, ncol = 1),
+  family          = "gaussian",
+  strata_method   = "interaction",
+  q = 10
+)
+```
+
+In the ranked method, `bx` sweeps dramatically across strata (even
+turning negative in the lowest strata) because the strata are confounded
+with the modifier. The interaction method recovers approximately
+constant `bx` values close to the true main effect of 0.25:
+
+``` r
+
+data.frame(
+  stratum     = 1:10,
+  bx_ranked      = round(summ_gxe_ranked$summary$bx, 2),
+  bx_interaction = round(summ_gxe_interaction$summary$bx, 2)
+)
+#>    stratum bx_ranked bx_interaction
+#> 1        1     -1.55           0.11
+#> 2        2     -0.90           0.29
+#> 3        3     -0.44           0.19
+#> 4        4     -0.05           0.17
+#> 5        5      0.27           0.27
+#> 6        6      0.51           0.25
+#> 7        7      0.71           0.07
+#> 8        8      0.91           0.39
+#> 9        9      1.23           0.14
+#> 10      10      1.63           0.42
 ```
 
 Once your data is in this format, the output data frame is all you need
@@ -216,20 +365,20 @@ summary(model)
 #> 
 #> Coefficients:
 #>   Estimate Std. Error 95%CI Lower 95%CI Upper   p.value    
-#> 2 2.195465   0.014309    2.167419      2.2235 < 2.2e-16 ***
+#> 2 2.173497   0.016894    2.140385      2.2066 < 2.2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
 #> Non-linearity tests
-#> Fractional polynomial degree p-value: 0.0671
+#> Fractional polynomial degree p-value: 0.544
 #> Fractional polynomial non-linearity p-value: 0
-#> Quadratic p-value: 4.23e-78
+#> Quadratic p-value: 9.53e-64
 #> Cochran Q p-value: 0
 ```
 
-<img src="man/figures/README-example4-1.png" width="100%" /> This also
-produces a graph of the fit with 95% confidence intervals. This is a
-ggplot object and can be adjusted with ggplot commands
+<img src="man/figures/README-example4-1.png" alt="" width="100%" /> This
+also produces a graph of the fit with 95% confidence intervals. This is
+a ggplot object and can be adjusted with ggplot commands
 
 ``` r
 library(ggplot2)
@@ -243,17 +392,25 @@ plot1 <- model$figure+
 plot1
 ```
 
-<img src="man/figures/README-example5-1.png" width="100%" /> There is
-also p-values provided in p_test and p_het. This is identical to the
-testing provided by the nlmr package: \* fp_d1_d2 : test between the
-fractional polynomial degrees \* fp : fractional polynomial
-non-linearity test \* quad: quadratic test \* Q : Cochran Q test and \*
-Q: Cochran Q heterogeneity test \* trend: trend test
+<img src="man/figures/README-example5-1.png" alt="" width="100%" />
+There are also p-values provided in p_test and p_het. This is identical
+to the testing provided by the nlmr package. First, testing the
+heterogeneity of the LACE estimates:
+
+- `fp_d1_d2`: test between the fractional polynomial degrees
+- `fp`: fractional polynomial non-linearity test
+- `quad`: quadratic test
+- `Q`: Cochran Q test
+
+And also testing the heterogeneity of the genetic-exposure associations:
+
+- `Q`: Cochran Q heterogeneity test
+- `trend`: trend test
 
 ``` r
 model$p_tests
-#>        fp_d1_d2 fp         quad Q
-#> [1,] 0.06706764  0 4.233668e-78 0
+#>       fp_d1_d2 fp         quad Q
+#> [1,] 0.5436089  0 9.530291e-64 0
 
 model$p_heterogeneity
 #> NULL
@@ -280,26 +437,26 @@ summary(model2)
 #> 
 #> LACE:
 #>    Estimate Std. Error 95%CI Lower 95%CI Upper   p.value    
-#> 1  11.08718    0.31945    10.44983      11.725 < 2.2e-16 ***
-#> 2  12.36698    0.23282    11.90098      12.833 < 2.2e-16 ***
-#> 3  13.45837    0.22595    13.00656      13.910 < 2.2e-16 ***
-#> 4  13.66015    0.22356    13.20526      14.115 < 2.2e-16 ***
-#> 5  14.73446    0.23835    14.26379      15.205 < 2.2e-16 ***
-#> 6  15.00092    0.26567    14.47399      15.528 < 2.2e-16 ***
-#> 7  16.26836    0.30873    15.64797      16.889 < 2.2e-16 ***
-#> 8  17.61759    0.42280    16.76284      18.472 < 2.2e-16 ***
-#> 9  19.73827    0.74605    18.28214      21.194 < 2.2e-16 ***
-#> 10 25.60207    5.53377    16.06703      35.137  1.42e-07 ***
+#> 1  10.99674    0.38169    10.24863      11.745 < 2.2e-16 ***
+#> 2  12.06038    0.28170    11.50825      12.613 < 2.2e-16 ***
+#> 3  13.00691    0.29127    12.43602      13.578 < 2.2e-16 ***
+#> 4  13.23968    0.27268    12.70523      13.774 < 2.2e-16 ***
+#> 5  14.55665    0.27722    14.01331      15.100 < 2.2e-16 ***
+#> 6  15.19545    0.30532    14.59703      15.794 < 2.2e-16 ***
+#> 7  16.12712    0.37575    15.39065      16.864 < 2.2e-16 ***
+#> 8  17.65818    0.49879    16.68055      18.636 < 2.2e-16 ***
+#> 9  19.32462    0.87699    17.60572      21.044 < 2.2e-16 ***
+#> 10 20.69597    7.08301     6.81328      34.579  0.003479 ** 
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
 #> Non-linearity tests
-#> Quadratic p-value: 4.23e-78
+#> Quadratic p-value: 9.53e-64
 #> Cochran Q p-value: 0
 ```
 
-<img src="man/figures/README-plexample-1.png" width="100%" /> Again the
-figure is a ggplot object and can be adjusted similarly.
+<img src="man/figures/README-plexample-1.png" alt="" width="100%" />
+Again the figure is a ggplot object and can be adjusted similarly.
 
 ``` r
 plot2 <- model2$figure+ 
@@ -309,7 +466,7 @@ plot2 <- model2$figure+
 plot2
 ```
 
-<img src="man/figures/README-pl2-1.png" width="100%" />
+<img src="man/figures/README-pl2-1.png" alt="" width="100%" />
 
 ## Example 4: Binary outcome
 
@@ -349,23 +506,23 @@ summary(model3)
 #> 
 #> Coefficients:
 #>    Estimate Std. Error 95%CI Lower 95%CI Upper p.value
-#> -1  0.75794    1.20972    -1.61311       3.129   0.531
+#> -1  1.72861    1.35904    -0.93512      4.3923  0.2034
 #> 
 #> Non-linearity tests
-#> Fractional polynomial degree p-value: 0.514
-#> Fractional polynomial non-linearity p-value: 0.603
-#> Quadratic p-value: 0.289
-#> Cochran Q p-value: 0.765
+#> Fractional polynomial degree p-value: 0.889
+#> Fractional polynomial non-linearity p-value: 0.508
+#> Quadratic p-value: 0.611
+#> Cochran Q p-value: 0.68
 ```
 
-<img src="man/figures/README-bin-1.png" width="100%" /> Not
+<img src="man/figures/README-bin-1.png" alt="" width="100%" /> Not
 unsurprisingly, we find no evidence of an effect, causal or otherwise,
 as the binary outcome was randomly distributed.
 
-If we look instead at the semi-summarised UK Biobank datasets on
-LDL-cholesterol and CAD, one with and one without covariates. Here we
-can see a potentially non-linear trend in the univariate data, which
-becomes a clear linear trend once covariates are included.
+Looking instead at the semi-summarised UK Biobank datasets on
+LDL-cholesterol and CAD — one with and one without covariates — we can
+see a potentially non-linear trend in the univariate data, which becomes
+a clear linear trend once covariates are included.
 
 ``` r
 
@@ -386,16 +543,16 @@ summary(model4)
 #> 
 #> LACE:
 #>     Estimate Std. Error 95%CI Lower 95%CI Upper   p.value    
-#> 1   0.476044   0.069782    0.357660      0.5944 3.235e-15 ***
-#> 2   0.364945   0.073984    0.221357      0.5085 6.307e-07 ***
-#> 3   0.312283   0.087353    0.143253      0.4813 0.0002933 ***
-#> 4   0.287650   0.097188    0.100267      0.4750 0.0026230 ** 
-#> 5   0.152506   0.101876   -0.046648      0.3517 0.1333784    
-#> 6   0.141101   0.105261   -0.063092      0.3453 0.1756110    
-#> 7   0.127970   0.102092   -0.073201      0.3291 0.2124684    
-#> 8   0.189778   0.104199   -0.012174      0.3917 0.0654969 .  
-#> 9   0.221003   0.103089    0.013359      0.4286 0.0369692 *  
-#> 10  0.237997   0.087287    0.048577      0.4274 0.0137914 *  
+#> 1   0.476044   0.060400    0.357660      0.5944 3.235e-15 ***
+#> 2   0.364945   0.073259    0.221357      0.5085 6.307e-07 ***
+#> 3   0.312283   0.086240    0.143253      0.4813 0.0002933 ***
+#> 4   0.287650   0.095604    0.100267      0.4750 0.0026230 ** 
+#> 5   0.152506   0.101609   -0.046648      0.3517 0.1333784    
+#> 6   0.141101   0.104180   -0.063092      0.3453 0.1756110    
+#> 7   0.127970   0.102638   -0.073201      0.3291 0.2124684    
+#> 8   0.189778   0.103037   -0.012174      0.3917 0.0654969 .  
+#> 9   0.221003   0.105940    0.013359      0.4286 0.0369692 *  
+#> 10  0.237997   0.096643    0.048577      0.4274 0.0137914 *  
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
@@ -404,7 +561,7 @@ summary(model4)
 #> Cochran Q p-value: 0.0631
 ```
 
-<img src="man/figures/README-bi2-1.png" width="100%" />
+<img src="man/figures/README-bi2-1.png" alt="" width="100%" />
 
 ``` r
 
@@ -425,16 +582,16 @@ summary(model5)
 #> 
 #> LACE:
 #>    Estimate Std. Error 95%CI Lower 95%CI Upper   p.value    
-#> 1  0.362034   0.073978    0.237073      0.4870 1.359e-08 ***
-#> 2  0.295715   0.078955    0.143206      0.4482 0.0001444 ***
-#> 3  0.359511   0.091955    0.181675      0.5373 7.423e-05 ***
-#> 4  0.215239   0.101457    0.019063      0.4114 0.0315186 *  
-#> 5  0.253899   0.106162    0.046393      0.4614 0.0164756 *  
-#> 6  0.429836   0.107685    0.220769      0.6389 5.585e-05 ***
-#> 7  0.257262   0.106364    0.047407      0.4671 0.0162712 *  
-#> 8  0.290755   0.107014    0.083848      0.4977 0.0058822 ** 
-#> 9  0.326965   0.105351    0.115532      0.5384 0.0024375 ** 
-#> 10 0.349742   0.089001    0.156722      0.5428 0.0003832 ***
+#> 1  0.362034   0.063756    0.237073      0.4870 1.359e-08 ***
+#> 2  0.295715   0.077811    0.143206      0.4482 0.0001444 ***
+#> 3  0.359511   0.090733    0.181675      0.5373 7.423e-05 ***
+#> 4  0.215239   0.100090    0.019063      0.4114 0.0315186 *  
+#> 5  0.253899   0.105870    0.046393      0.4614 0.0164756 *  
+#> 6  0.429836   0.106667    0.220769      0.6389 5.585e-05 ***
+#> 7  0.257262   0.107069    0.047407      0.4671 0.0162712 *  
+#> 8  0.290755   0.105565    0.083848      0.4977 0.0058822 ** 
+#> 9  0.326965   0.107874    0.115532      0.5384 0.0024375 ** 
+#> 10 0.349742   0.098480    0.156722      0.5428 0.0003832 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
@@ -443,4 +600,4 @@ summary(model5)
 #> Cochran Q p-value: 0.934
 ```
 
-<img src="man/figures/README-bi2-2.png" width="100%" />
+<img src="man/figures/README-bi2-2.png" alt="" width="100%" />
