@@ -35,10 +35,6 @@ frac_poly_summ_mr(
 )
 }
 \arguments{
-\item{summ}{a dataframe contains bx, by, bxse, byse, xmean. This is the
-summary output of the \code{create_nlmr_summary} function; either as the full output or
-just passing the summary part.}
-
 \item{by}{vector of gene-outcome associations.}
 
 \item{bx}{vector of gene-exposure associations.}
@@ -49,6 +45,10 @@ just passing the summary part.}
 
 \item{xmean}{average value of the exposure in each stratum (or whatever
 summary of the exposure level in the stratum is desired).}
+
+\item{summ}{a dataframe contains bx, by, bxse, byse, xmean. This is the
+summary output of the \code{create_nlmr_summary} function; either as the full output or
+just passing the summary part.}
 
 \item{method}{meta-regression method parsed to the rma package. The default
 is fixed-effects ('FE').}

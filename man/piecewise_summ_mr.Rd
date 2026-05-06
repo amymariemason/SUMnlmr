@@ -6,7 +6,6 @@
 data}
 \usage{
 piecewise_summ_mr(
-  summ = NULL,
   by = NULL,
   bx = NULL,
   byse = NULL,
@@ -14,6 +13,7 @@ piecewise_summ_mr(
   xmean = NULL,
   xmin = NULL,
   xmax = NULL,
+  summ = NULL,
   xbreaks = NULL,
   family = "gaussian",
   average.exposure.associations = FALSE,
@@ -30,10 +30,6 @@ piecewise_summ_mr(
 )
 }
 \arguments{
-\item{summ}{a dataframe contains bx, by, bxse, byse, xmean. This is the
-summary output of the \code{create_nlmr_summary} function; either as the full output or
-just passing the summary part.}
-
 \item{by}{vector of gene-outcome associations.}
 
 \item{bx}{vector of gene-exposure associations.}
@@ -48,6 +44,10 @@ just passing the summary part.}
 \item{xmin}{min value of the original exposure in each stratum (see note)}
 
 \item{xmax}{max value of the original exposure in each stratum (see note)}
+
+\item{summ}{a dataframe contains bx, by, bxse, byse, xmean. This is the
+summary output of the \code{create_nlmr_summary} function; either as the full output or
+just passing the summary part.}
 
 \item{xbreaks}{break points for the stratum x values (see note)}
 
