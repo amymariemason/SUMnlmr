@@ -12,7 +12,8 @@ iv_free(
   gxe_covar = NULL,
   gxe_interaction = NULL,
   q = 10,
-  controlsonly = T
+  controlsonly = T,
+  family = "gaussian"
 )
 }
 \arguments{
@@ -33,8 +34,12 @@ into. The default is deciles (i.e. 10
 quantiles).}
 
 \item{controlsonly}{whether to estimate the gx association in all people,
-or in controls only. This is set to TRUE by default, but has no effect if
-family is gaussian.}
+or in controls only. This is set to TRUE by default, but only takes effect
+when \code{family} is \code{"binomial"} or \code{"coxph"}.}
+
+\item{family}{the outcome family; one of \code{"gaussian"} (default),
+\code{"binomial"}, or \code{"coxph"}. Controls-only filtering is only
+applied for \code{"binomial"} or \code{"coxph"} outcomes.}
 }
 \value{
 \item{xcoef}{the association between the exposure and the instrument}
