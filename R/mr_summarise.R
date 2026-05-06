@@ -518,7 +518,7 @@ if (!is.na(seed)) { set.seed(seed) }
     final_output_list[["GR_max"]]<- GR_stats[1]
     }
 
-    if (report_GR==TRUE){
+    if (report_GR==TRUE && is.null(x_strata)){
       final_output_list[["GR_results"]]<-GR_stats
     }
 
