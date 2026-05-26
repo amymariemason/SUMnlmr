@@ -52,6 +52,14 @@ You can install the released version of SUMnlmr from
 ``` r
 # install.packages("devtools")
 devtools::install_github("amymariemason/SUMnlmr")
+#> Warning: `install_github()` was deprecated in devtools 2.5.0.
+#> ℹ Please use pak::pak("user/repo") instead.
+#> This warning is displayed once per session.
+#> Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+#> generated.
+#> Using GitHub PAT from the git credential store.
+#> Skipping install of 'SUMnlmr' from a github remote, the SHA1 (ac958211) has not changed since last install.
+#>   Use `force = TRUE` to force installation
 ```
 
 ## Example 1: Summarizing data
@@ -60,27 +68,37 @@ This is a basic example which shows you how to create the
 semi-summarized data form. First we create some practice data:
 
 ``` r
-devtools::load_all()
-#> ℹ Loading SUMnlmr
-#library(SUMnlmr)
+#devtools::load_all()
+library(SUMnlmr)
+library(tidyr)
+library(dplyr)
+#> 
+#> Attaching package: 'dplyr'
+#> The following objects are masked from 'package:stats':
+#> 
+#>     filter, lag
+#> The following objects are masked from 'package:base':
+#> 
+#>     intersect, setdiff, setequal, union
+library(ggplot2)
 ## create some data to practise on
 test_data<-create_ind_data(N=10000, beta2=2, beta1=1)
 # this creates quadratic.Y  = x + 2x^2 + errorY 
 round(head(test_data), 2)
-#>   g    u errorX errorY    X linear.Y quadratic.Y sqrt.Y log.Y threshold.Y
-#> 1 2 0.51   5.90  -0.66 8.91     8.66      167.33   2.73  1.94        8.66
-#> 2 0 0.11   3.52   0.74 5.63     6.46       69.95   3.20  2.56        6.46
-#> 3 1 0.28   1.82  -0.04 4.35     4.53       42.33   2.26  1.65        4.53
-#> 4 0 0.32   1.51  -0.49 3.82     3.59       32.84   1.72  1.10        3.59
-#> 5 1 0.55   3.06  -0.73 5.86     5.57       74.26   2.13  1.48        5.57
-#> 6 0 0.55   0.19   0.50 2.75     3.69       18.76   2.60  1.96        3.69
+#>   g    u errorX errorY    X linear.Y quadratic.Y sqrt.Y log.Y threshold.Y y.bin
+#> 1 2 0.09   0.18   0.02 2.78     2.87       18.30   1.76  1.12        2.87     1
+#> 2 0 0.42   0.53  -0.62 2.95     2.67       20.08   1.43  0.80        2.67     0
+#> 3 0 0.58   0.73   1.05 3.31     4.82       26.69   3.33  2.71        4.82     0
+#> 4 0 0.07   1.24   0.35 3.32     3.72       25.72   2.23  1.61        3.72     0
+#> 5 0 0.94   0.74  -1.00 3.67     3.42       30.38   1.66  1.05        3.42     1
+#> 6 0 0.61   0.06  -0.77 2.67     2.38       16.60   1.35  0.70        2.38     0
 #>   fracpoly.Y
-#> 1      13.03
-#> 2       9.92
-#> 3       7.47
-#> 4       6.27
-#> 5       9.10
-#> 6       5.71
+#> 1       4.92
+#> 2       4.83
+#> 3       7.21
+#> 4       6.12
+#> 5       6.02
+#> 6       4.34
 ```
 
 Then we use create_nlmr_summary to summarise it.
@@ -100,12 +118,12 @@ summ_data<-create_nlmr_summary(y = test_data$quadratic.Y,
 
 round(head(summ_data$summary), 2)
 #>     bx   by bxse byse xmean xmin xmax
-#> 1 0.24 2.66 0.01 0.08  2.46 2.30 2.72
-#> 2 0.23 2.75 0.00 0.06  2.76 2.57 2.94
-#> 3 0.22 2.87 0.00 0.06  2.95 2.76 3.12
-#> 4 0.22 2.97 0.00 0.06  3.12 2.94 3.29
-#> 5 0.22 3.25 0.00 0.06  3.30 3.11 3.47
-#> 6 0.23 3.45 0.00 0.07  3.49 3.29 3.69
+#> 1 0.23 2.52 0.01 0.08  2.46 2.31 2.70
+#> 2 0.23 2.62 0.00 0.06  2.73 2.54 2.92
+#> 3 0.22 2.91 0.00 0.06  2.93 2.74 3.10
+#> 4 0.23 3.26 0.00 0.06  3.11 2.92 3.27
+#> 5 0.22 3.20 0.00 0.06  3.27 3.08 3.50
+#> 6 0.22 3.29 0.00 0.07  3.46 3.27 3.66
 ```
 
 Note 1: This example uses the residual method, which relies on
@@ -130,12 +148,12 @@ summ_covar<-create_nlmr_summary(y = test_data$quadratic.Y,
   
 round(head(summ_covar$summary), 2)
 #>     bx    by bxse byse xmean xmin xmax
-#> 1 0.02 -3.13    0 0.54  3.46 2.30 7.26
-#> 2 0.01 -0.72    0 0.02  2.96 2.57 2.91
-#> 3 0.01 -0.75    0 0.01  3.14 2.76 3.15
-#> 4 0.01 -0.76    0 0.01  3.36 2.91 5.48
-#> 5 0.01 -0.80    0 0.01  3.52 3.05 5.34
-#> 6 0.01 -0.80    0 0.01  3.71 3.18 5.21
+#> 1 0.02 -1.70    0 0.34  3.54 2.31 7.41
+#> 2 0.01 -0.69    0 0.02  3.00 2.55 2.91
+#> 3 0.01 -0.67    0 0.01  3.16 2.74 3.13
+#> 4 0.01 -0.69    0 0.01  3.28 2.90 3.34
+#> 5 0.01 -0.72    0 0.01  3.41 3.03 3.56
+#> 6 0.01 -0.74    0 0.01  3.66 3.17 5.21
 ```
 
 Note 2: Because the covariates are included as a matrix, lm cannot
@@ -162,12 +180,12 @@ summ_covar2<-create_nlmr_summary(y = test_data$quadratic.Y,
 
 round(head(summ_covar2$summary), 2)
 #>     bx   by bxse byse xmean xmin xmax
-#> 1 0.26 3.09 0.01 0.14  2.57 2.33 2.95
-#> 2 0.24 2.98 0.01 0.16  2.80 2.44 3.17
-#> 3 0.24 3.09 0.01 0.17  2.98 2.63 3.39
-#> 4 0.25 3.43 0.01 0.20  3.16 2.78 3.57
-#> 5 0.25 3.53 0.01 0.23  3.33 2.93 3.78
-#> 6 0.24 3.74 0.02 0.29  3.54 3.09 4.09
+#> 1 0.23 2.68 0.01 0.14  2.57 2.34 2.92
+#> 2 0.24 3.00 0.01 0.15  2.78 2.43 3.13
+#> 3 0.24 3.11 0.01 0.16  2.96 2.60 3.30
+#> 4 0.23 3.34 0.01 0.18  3.12 2.76 3.51
+#> 5 0.24 3.58 0.01 0.22  3.31 2.91 3.74
+#> 6 0.24 3.53 0.02 0.26  3.50 3.06 3.99
 ```
 
 These have used a single genetic variant count, but the method works
@@ -272,22 +290,21 @@ The corrected exposure **X − β\_{g×H}·(g×H)** is then used to form
 strata via the ranked method. Within-stratum genetic associations are
 estimated using `covar` as usual.
 
-To illustrate the difference, we simulate data where `modifier` strongly
-amplifies the effect of `g` on `X` (GxE coefficient = 1.5, compared to a
-main g effect of 0.25):
+To illustrate the difference, we simulate data where a modifier varies
+the effect of `g` on `X`
 
 ``` r
 
-set.seed(8341)
-N <- 10000
+set.seed(8343)
+N <- 100000
 
 gxe_g        <- rbinom(N, 2, 0.3)
-gxe_modifier <- rnorm(N)
-gxe_u        <- runif(N, 0, 1)
+gxe_modifier <- rnorm(N, 1, 1)
+gxe_u        <- rnorm(N, 1, 1)
 
 # X has a strong GxE: the effect of g on X scales with modifier
-gxe_X <- 2 + gxe_g * (0.25 + 1.5 * gxe_modifier) + gxe_u + rexp(N, 1)
-gxe_Y <- gxe_X + 2 * gxe_X^2 + 0.8 * gxe_u + rnorm(N)
+gxe_X <- 2 + 0.5*gxe_g + 0.3*gxe_modifier+ 0.2*gxe_modifier*gxe_g  + gxe_u + rnorm(N)
+gxe_Y <- 0.8 * gxe_u + rnorm(N)
 
 # Ranked method — no correction for the GxE
 summ_gxe_ranked <- create_nlmr_summary(
@@ -309,10 +326,8 @@ summ_gxe_interaction <- create_nlmr_summary(
 )
 ```
 
-In the ranked method, `bx` varies across strata (even
-turning negative in the lowest strata) because the strata are confounded
-with the modifier. The interaction method recovers approximately
-constant `bx` values close to the true main effect of 0.25:
+In this case, the ranked method `bx` varies across strata, while the
+interaction method produces more similar `bx` values.
 
 ``` r
 
@@ -322,17 +337,60 @@ data.frame(
   bx_interaction = round(summ_gxe_interaction$summary$bx, 2)
 )
 #>    stratum bx_ranked bx_interaction
-#> 1        1     -1.55           0.11
-#> 2        2     -0.90           0.29
-#> 3        3     -0.44           0.19
-#> 4        4     -0.05           0.17
-#> 5        5      0.27           0.27
-#> 6        6      0.51           0.25
-#> 7        7      0.71           0.07
-#> 8        8      0.91           0.39
-#> 9        9      1.23           0.14
-#> 10      10      1.63           0.42
+#> 1        1      0.59           0.62
+#> 2        2      0.63           0.65
+#> 3        3      0.65           0.65
+#> 4        4      0.67           0.68
+#> 5        5      0.68           0.68
+#> 6        6      0.69           0.68
+#> 7        7      0.71           0.70
+#> 8        8      0.72           0.70
+#> 9        9      0.74           0.72
+#> 10      10      0.79           0.76
 ```
+
+Similarly, looking at the lace estimates
+
+``` r
+data<- bind_rows(summ_gxe_ranked$summary %>% mutate(model="ranked"), summ_gxe_interaction$summary%>% mutate(model="interaction")) %>% 
+  mutate(
+ # Use abs() so the standard error remains positive when bx is negative.
+         lace_se = abs(byse / bx),
+         lace= by/bx,
+  # Confidence intervals for LACE
+         lace_lci = lace - 1.96 * lace_se,
+         lace_uci = lace + 1.96 * lace_se
+)
+  
+plot_lace <- ggplot(
+  data,
+  aes(x = xmean, y = lace, color = model)) +
+  geom_hline(
+    yintercept = 0,
+    linewidth = 0.1,
+    color = "black"
+  ) +
+  geom_point(
+    size = 2.0
+  ) +
+  geom_linerange(
+    aes(ymin = lace_lci, ymax = lace_uci),
+    linewidth = 0.8,
+    show.legend = FALSE
+  ) +
+  scale_x_continuous(
+  ) +
+  labs(
+    x = "X mean of stratum",
+    y = "LACE",
+    color = "Method"
+  ) +
+  theme_minimal() + facet_grid(.~model)
+
+plot_lace
+```
+
+<img src="man/figures/README-example3e_compare-1.png" alt="" width="100%" />
 
 Once your data is in this format, the output data frame is all you need
 to share to fit the fractional polynomial or piecewise linear models
@@ -365,14 +423,14 @@ summary(model)
 #> 
 #> Coefficients:
 #>   Estimate Std. Error 95%CI Lower 95%CI Upper   p.value    
-#> 2 2.173497   0.016894    2.140385      2.2066 < 2.2e-16 ***
+#> 2 2.200091   0.016644    2.167469      2.2327 < 2.2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
 #> Non-linearity tests
-#> Fractional polynomial degree p-value: 0.544
+#> Fractional polynomial degree p-value: 0.312
 #> Fractional polynomial non-linearity p-value: 0
-#> Quadratic p-value: 9.53e-64
+#> Quadratic p-value: 8.26e-67
 #> Cochran Q p-value: 0
 ```
 
@@ -410,7 +468,7 @@ And also testing the heterogeneity of the genetic-exposure associations:
 ``` r
 model$p_tests
 #>       fp_d1_d2 fp         quad Q
-#> [1,] 0.5436089  0 9.530291e-64 0
+#> [1,] 0.3119787  0 8.263185e-67 0
 
 model$p_heterogeneity
 #> NULL
@@ -437,21 +495,21 @@ summary(model2)
 #> 
 #> LACE:
 #>    Estimate Std. Error 95%CI Lower 95%CI Upper   p.value    
-#> 1  10.99674    0.38169    10.24863      11.745 < 2.2e-16 ***
-#> 2  12.06038    0.28170    11.50825      12.613 < 2.2e-16 ***
-#> 3  13.00691    0.29127    12.43602      13.578 < 2.2e-16 ***
-#> 4  13.23968    0.27268    12.70523      13.774 < 2.2e-16 ***
-#> 5  14.55665    0.27722    14.01331      15.100 < 2.2e-16 ***
-#> 6  15.19545    0.30532    14.59703      15.794 < 2.2e-16 ***
-#> 7  16.12712    0.37575    15.39065      16.864 < 2.2e-16 ***
-#> 8  17.65818    0.49879    16.68055      18.636 < 2.2e-16 ***
-#> 9  19.32462    0.87699    17.60572      21.044 < 2.2e-16 ***
-#> 10 20.69597    7.08301     6.81328      34.579  0.003479 ** 
+#> 1  11.00975    0.35793    10.30821      11.711 < 2.2e-16 ***
+#> 2  11.63049    0.27691    11.08774      12.173 < 2.2e-16 ***
+#> 3  13.06489    0.26623    12.54307      13.587 < 2.2e-16 ***
+#> 4  14.31205    0.27178    13.77936      14.845 < 2.2e-16 ***
+#> 5  14.32277    0.27282    13.78804      14.857 < 2.2e-16 ***
+#> 6  14.98851    0.30352    14.39361      15.583 < 2.2e-16 ***
+#> 7  16.39067    0.36739    15.67059      17.111 < 2.2e-16 ***
+#> 8  17.16016    0.51128    16.15805      18.162 < 2.2e-16 ***
+#> 9  19.59323    0.87449    17.87922      21.307 < 2.2e-16 ***
+#> 10 25.26508    6.55636    12.41461      38.115 0.0001164 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
 #> Non-linearity tests
-#> Quadratic p-value: 9.53e-64
+#> Quadratic p-value: 8.26e-67
 #> Cochran Q p-value: 0
 ```
 
@@ -502,17 +560,17 @@ summary(model3)
 #> 
 #> Number of individuals: NA; Quantiles: 10; 95%CI: Model based SEs
 #> 
-#> Powers: -1
+#> Powers: 3
 #> 
 #> Coefficients:
-#>    Estimate Std. Error 95%CI Lower 95%CI Upper p.value
-#> -1  1.72861    1.35904    -0.93512      4.3923  0.2034
+#>     Estimate Std. Error 95%CI Lower 95%CI Upper p.value
+#> 3  0.0019138  0.0032812  -0.0045173      0.0083  0.5597
 #> 
 #> Non-linearity tests
-#> Fractional polynomial degree p-value: 0.889
-#> Fractional polynomial non-linearity p-value: 0.508
-#> Quadratic p-value: 0.611
-#> Cochran Q p-value: 0.68
+#> Fractional polynomial degree p-value: 0.978
+#> Fractional polynomial non-linearity p-value: 0.774
+#> Quadratic p-value: 0.835
+#> Cochran Q p-value: 0.878
 ```
 
 <img src="man/figures/README-bin-1.png" alt="" width="100%" /> Not

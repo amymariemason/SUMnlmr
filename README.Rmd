@@ -69,6 +69,9 @@ form. First we create some practice data:
 ```{r example}
 #devtools::load_all()
 library(SUMnlmr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
 ## create some data to practise on
 test_data<-create_ind_data(N=10000, beta2=2, beta1=1)
 # this creates quadratic.Y  = x + 2x^2 + errorY 
@@ -207,22 +210,21 @@ The corrected exposure **X − β_{g×H}·(g×H)** is then used to form strata v
 the ranked method. Within-stratum genetic associations are estimated using
 `covar` as usual.
 
-To illustrate the difference, we simulate data where `modifier` strongly
-amplifies the effect of `g` on `X` (GxE coefficient = 1.5, compared to a main
-g effect of 0.25):
+To illustrate the difference, we simulate data where a modifier 
+varies the effect of `g` on `X` 
 
 ```{r example3d}
 
-set.seed(8341)
-N <- 10000
+set.seed(8343)
+N <- 100000
 
 gxe_g        <- rbinom(N, 2, 0.3)
-gxe_modifier <- rnorm(N)
-gxe_u        <- runif(N, 0, 1)
+gxe_modifier <- rnorm(N, 1, 1)
+gxe_u        <- rnorm(N, 1, 1)
 
 # X has a strong GxE: the effect of g on X scales with modifier
-gxe_X <- 2 + gxe_g * (0.25 + 1.5 * gxe_modifier) + gxe_u + rexp(N, 1)
-gxe_Y <- gxe_X + 2 * gxe_X^2 + 0.8 * gxe_u + rnorm(N)
+gxe_X <- 2 + 0.5*gxe_g + 0.3*gxe_modifier+ 0.2*gxe_modifier*gxe_g  + gxe_u + rnorm(N)
+gxe_Y <- 0.8 * gxe_u + rnorm(N)
 
 # Ranked method — no correction for the GxE
 summ_gxe_ranked <- create_nlmr_summary(
@@ -242,9 +244,10 @@ summ_gxe_interaction <- create_nlmr_summary(
   strata_method   = "interaction",
   q = 10
 )
+
 ```
 
-In the ranked method, `bx` varies across strata (even turning negative in the lowest strata) because the strata are confounded with the modifier. The interaction method recovers approximately constant `bx` values close to the true main effect of 0.25:
+In this case, the ranked method `bx` varies across strata, while the interaction method produces more similar `bx` values. 
 
 ```{r example3d_compare}
 
@@ -254,6 +257,48 @@ data.frame(
   bx_interaction = round(summ_gxe_interaction$summary$bx, 2)
 )
 ```
+Similarly, looking at the lace estimates
+
+```{r example3e_compare}
+data<- bind_rows(summ_gxe_ranked$summary %>% mutate(model="ranked"), summ_gxe_interaction$summary%>% mutate(model="interaction")) %>% 
+  mutate(
+ # Use abs() so the standard error remains positive when bx is negative.
+         lace_se = abs(byse / bx),
+         lace= by/bx,
+  # Confidence intervals for LACE
+         lace_lci = lace - 1.96 * lace_se,
+         lace_uci = lace + 1.96 * lace_se
+)
+  
+plot_lace <- ggplot(
+  data,
+  aes(x = xmean, y = lace, color = model)) +
+  geom_hline(
+    yintercept = 0,
+    linewidth = 0.1,
+    color = "black"
+  ) +
+  geom_point(
+    size = 2.0
+  ) +
+  geom_linerange(
+    aes(ymin = lace_lci, ymax = lace_uci),
+    linewidth = 0.8,
+    show.legend = FALSE
+  ) +
+  scale_x_continuous(
+  ) +
+  labs(
+    x = "X mean of stratum",
+    y = "LACE",
+    color = "Method"
+  ) +
+  theme_minimal() + facet_grid(.~model)
+
+plot_lace
+
+```
+
 
 Once your data is in this format, the output data frame is all you need to share to fit the fractional polynomial or piecewise linear models onto the data.
 
